@@ -24,6 +24,7 @@ OPT_URL = "https://www.taifex.com.tw/cht/3/optDataDown"
 FUT_URL = "https://www.taifex.com.tw/cht/3/futDataDown"
 MULT, TX_MULT, RATE = 50, 200, 0.015
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
+DEBUG = []
 UA = {"User-Agent": "Mozilla/5.0 (txo-gamma-flip data job)"}
 
 
@@ -39,6 +40,7 @@ def download(url, commodity, start, end):
     for attempt in range(4):
         try:
             r = requests.post(url, data=form, headers=UA, timeout=60)
+            DEBUG.append(f"{commodity} {url} status={r.status_code} len={len(r.content)} ctype={r.headers.get('content-type')}")
             r.raise_for_status()
             raw = r.content
             for enc in ("big5", "cp950", "utf-8-sig"):
@@ -48,6 +50,7 @@ def download(url, commodity, start, end):
                         return txt
                 except UnicodeDecodeError:
                     continue
+            DEBUG.append(raw[:1500].decode("big5", "replace"))
             return ""  # 無資料（假日）時期交所回傳 HTML 提示
         except Exception as e:  # noqa: BLE001
             print(f"download retry {attempt+1}: {e}", file=sys.stderr)
@@ -269,6 +272,9 @@ def main():
     days = sorted(d for d in opt if d in fut)
     if not days:
         print("沒有可用的交易日資料（假日或期交所尚未公布）")
+        os.makedirs(DATA, exist_ok=True)
+        with open(os.path.join(DATA, "_debug.txt"), "w", encoding="utf-8") as f:
+            f.write(datetime.now(TPE).isoformat() + "\n" + f"opt days={len(opt)} fut days={len(fut)}\n" + "\n----\n".join(DEBUG))
         return
     os.makedirs(os.path.join(DATA, "daily"), exist_ok=True)
     hist_path = os.path.join(DATA, "history.json")
