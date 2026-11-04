@@ -50,12 +50,27 @@ def download(url, commodity, start, end):
                         return txt
                 except UnicodeDecodeError:
                     continue
-            DEBUG.append(raw[:1500].decode("big5", "replace"))
+            DEBUG.append(raw[:600].decode("utf-8", "replace"))
             return ""  # 無資料（假日）時期交所回傳 HTML 提示
         except Exception as e:  # noqa: BLE001
             print(f"download retry {attempt+1}: {e}", file=sys.stderr)
             time.sleep(5 * (attempt + 1))
     return ""
+
+
+def download_range(url, commodity, start, end):
+    """期交所單次查詢上限約一個月，且當日資料公布前查詢會被拒，分段並自動退回前一日"""
+    parts, cur = [], start
+    while cur <= end:
+        stop = min(cur + timedelta(days=27), end)
+        txt = download(url, commodity, cur, stop)
+        while not txt and stop > cur:
+            stop -= timedelta(days=1)
+            txt = download(url, commodity, cur, stop)
+        if txt:
+            parts.append(txt)
+        cur = cur + timedelta(days=28)
+    return parts
 
 
 def read_csv(txt):
@@ -267,8 +282,11 @@ def main():
     a = ap.parse_args()
     today = datetime.now(TPE).date()
     start = today - timedelta(days=a.days)
-    opt = parse_options(download(OPT_URL, "TXO", start, today))
-    fut = parse_futures(download(FUT_URL, "TX", start, today))
+    opt, fut = {}, {}
+    for txt in download_range(OPT_URL, "TXO", start, today):
+        opt.update(parse_options(txt))
+    for txt in download_range(FUT_URL, "TX", start, today):
+        fut.update(parse_futures(txt))
     days = sorted(d for d in opt if d in fut)
     if not days:
         print("沒有可用的交易日資料（假日或期交所尚未公布）")
