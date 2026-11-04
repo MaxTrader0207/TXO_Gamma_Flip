@@ -1,4 +1,5 @@
 name: 更新 TXO Gamma Flip 資料
+# 首次執行或 data/history.json 不存在時會自動往回補 45 天
 
 on:
   schedule:

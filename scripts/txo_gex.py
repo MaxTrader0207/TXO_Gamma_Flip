@@ -303,7 +303,7 @@ def main():
     for d in days:
         fcode, F = fut[d]
         val = datetime(d.year, d.month, d.day, 13, 45, tzinfo=TPE)
-        rows = [r for r in opt[d] if date.fromisoformat(r[1]) >= d and abs(r[2] - F) / F <= 0.15]
+        rows = [r for r in opt[d] if date.fromisoformat(r[1]) > d and abs(r[2] - F) / F <= 0.15]
         if (d.isoformat() in items) and d != days[-1]:
             continue
         summ = summarize(rows, F, val)
