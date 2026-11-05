@@ -14,7 +14,7 @@ on:
         default: "7"
   push:
     paths:
-      - "scripts/**"
+      - "scripts/txo_gex.py"
       - ".github/workflows/update.yml"
 
 permissions:
@@ -40,11 +40,12 @@ jobs:
             if [ -f data/history.json ]; then DAYS=14; else DAYS=45; fi
           fi
           python scripts/txo_gex.py --days "$DAYS"
+          python scripts/build_offline.py TXO
       - name: 提交資料
         run: |
           git config user.name "txo-bot"
           git config user.email "txo-bot@users.noreply.github.com"
-          git add data
+          git add data offline
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
           git commit -m "data: TXO $(TZ=Asia/Taipei date +%F)"
           git push
