@@ -83,6 +83,13 @@ th{color:var(--muted);font-weight:500;font-size:12px}
 th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 td{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 td.lbl{font-family:var(--f-body)}
+tr.off td{opacity:.42}
+tr.off td:first-child{opacity:1}
+tfoot td{font-weight:600;border-top:2px solid var(--ink);border-bottom:none}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{padding:4px 10px;font-size:12px;border-radius:999px}
+.incstatus{font-size:13px;padding:8px 10px;border-radius:6px;background:var(--chip);margin-bottom:8px;transition:background-color .6s}
+.incstatus.flash{background:color-mix(in srgb,var(--accent) 22%,var(--chip))}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--c)}
 details{font-size:13px}
 details summary{cursor:pointer;font-weight:700}
@@ -171,11 +178,17 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
   </section>
 
   <section class="panel">
-    <div class="head"><h2>到期明細</h2><span class="sub">取消勾選即排除該到期，所有數字即時重算</span></div>
+    <div class="head"><h2>到期明細</h2>
+      <div class="quick" role="group" aria-label="快速選擇到期">
+        <button type="button" data-pick="all">全部</button><button type="button" data-pick="W">只看週三</button><button type="button" data-pick="F">只看週五</button><button type="button" data-pick="WF">只看週選</button><button type="button" data-pick="M">只看月選</button><button type="button" data-pick="near">近 2 檔</button>
+      </div>
+    </div>
+    <div id="incStatus" class="incstatus" aria-live="polite"></div>
     <div class="tablewrap">
       <table>
         <thead><tr><th>納入</th><th>契約</th><th>到期日</th><th>剩餘天數</th><th>Call OI</th><th>Put OI</th><th>價平 IV</th><th>GEX 億/1%</th><th>Flip</th><th>Call Wall</th><th>Put Wall</th></tr></thead>
         <tbody id="expTable"></tbody>
+        <tfoot id="expFoot"></tfoot>
       </table>
     </div>
   </section>
@@ -455,13 +468,28 @@ function render(){
     const coi=rows.filter(x=>x.isCall).reduce((s,x)=>s+x.oi,0),poi=rows.filter(x=>!x.isCall).reduce((s,x)=>s+x.oi,0);
     let atm=rows[0];for(const x of rows)if(Math.abs(x.K-S)<Math.abs(atm.K-S))atm=x;
     const cv=grid.map(s=>gexAt(rows,s,r));const f=findFlip(grid,cv,S);const w=walls(rows,S,r);const gg=gexAt(rows,S,r);
-    const tr=document.createElement("tr");tr.style.setProperty("--c",`var(${g.color})`);
+    const tr=document.createElement("tr");tr.style.setProperty("--c",`var(${g.color})`);if(!on)tr.className="off";
     tr.innerHTML=`<td class="lbl"><input type="checkbox" id="inc-${c}" ${on?"checked":""} aria-label="納入 ${c}"></td><td class="lbl"><span class="dot"></span>${c}　<span class="sub">${g.name}</span></td><td>${fmtD(exp)}（${wk(exp)}）</td><td>${dte.toFixed(1)}</td><td>${fmt(coi)}</td><td>${fmt(poi)}</td><td>${fmt(atm.ivUse*100,1)}%</td><td style="color:var(${gg>=0?"--pos":"--neg"})">${sgn(gg,2)}</td><td>${f===null?"—":fmt(f,0)}</td><td>${w.call?fmt(w.call):"—"}</td><td>${w.put?fmt(w.put):"—"}</td>`;
     tb.appendChild(tr);
-    tr.querySelector("input").addEventListener("change",e=>{state.included[c]=e.target.checked;render();});
+    tr.querySelector("input").addEventListener("change",e=>{state.included[c]=e.target.checked;rerender();});
   }
+  // 合併列：只計已納入的到期，隨勾選即時變動
+  const nIn=codes.filter(c=>state.included[c]).length;
+  const cAll=incRows.filter(x=>x.isCall).reduce((s,x)=>s+x.oi,0),pAll=incRows.filter(x=>!x.isCall).reduce((s,x)=>s+x.oi,0);
+  $("expFoot").innerHTML=`<tr><td class="lbl"></td><td class="lbl">合併（納入 ${nIn}／${codes.length} 檔）</td><td></td><td></td><td>${fmt(cAll)}</td><td>${fmt(pAll)}</td><td></td><td style="color:var(${gNow>=0?"--pos":"--neg"})">${sgn(gNow,2)}</td><td>${fl===null?"—":fmt(fl,0)}</td><td>${W.call?fmt(W.call):"—"}</td><td>${W.put?fmt(W.put):"—"}</td></tr>`;
+  const off=codes.filter(c=>!state.included[c]);
+  const st=$("incStatus");
+  st.textContent=`目前合併 Flip ${fl===null?"區間內無":fmt(fl,0)}｜總 GEX ${sgn(gNow,2)} 億｜${off.length?`已排除：${off.join("、")}`:"已納入全部到期"}。上方總覽、曲線、各區塊建議都只計算已勾選的到期。`;
+  if(state._flash){st.classList.remove("flash");void st.offsetWidth;st.classList.add("flash");setTimeout(()=>st.classList.remove("flash"),700);state._flash=false;}
   renderHistory();
 }
+
+function rerender(){state._flash=true;$("incStatus").textContent="重新計算中…";requestAnimationFrame(()=>setTimeout(render,0));}
+document.querySelector(".quick").addEventListener("click",e=>{
+  const k=e.target.dataset&&e.target.dataset.pick;if(!k||!state.rows.length)return;
+  const list=[...new Set(state.rows.map(x=>x.code))].sort((a,b)=>{const ea=state.rows.find(x=>x.code===a).exp,eb=state.rows.find(x=>x.code===b).exp;return ea-eb;});
+  list.forEach((c,i)=>{const g=groupOf(c);state.included[c]=k==="all"||(k==="near"?i<2:k.includes(g));});
+  rerender();});
 
 /* ---------- per-group advice ---------- */
 function expiryStats(code,rows,S,r){
