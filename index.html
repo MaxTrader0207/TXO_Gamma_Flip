@@ -96,6 +96,19 @@ tfoot td{font-weight:600;border-top:2px solid var(--ink);border-bottom:none}
 .quick{display:flex;flex-wrap:wrap;gap:6px}
 .quick button{padding:4px 10px;font-size:12px;border-radius:999px}
 .incstatus{font-size:13px;padding:8px 10px;border-radius:6px;background:var(--chip);margin-bottom:8px;transition:background-color .6s}
+.incstatus{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;line-height:1.7}
+.incstatus b{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:700}
+.incstatus .hl-flip{color:var(--flip)}
+.incstatus .hl-pos{color:var(--pos)}
+.incstatus .hl-neg{color:var(--neg)}
+.incstatus .hl-warn{color:var(--warn);font-family:var(--f-body)}
+.incstatus .hl-ok{color:var(--muted);font-family:var(--f-body);font-weight:500}
+.incstatus .hl-dist,.incstatus .hl-reg{font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:999px}
+.incstatus .hl-dist.up{color:var(--pos);background:color-mix(in srgb,var(--pos) 14%,transparent)}
+.incstatus .hl-dist.dn{color:var(--neg);background:color-mix(in srgb,var(--neg) 14%,transparent)}
+.incstatus .hl-reg.pos{color:var(--pos);background:color-mix(in srgb,var(--pos) 14%,transparent)}
+.incstatus .hl-reg.neg{color:var(--neg);background:color-mix(in srgb,var(--neg) 14%,transparent)}
+.incstatus .hl-note{color:var(--muted);font-size:12px;flex-basis:100%}
 .incstatus.flash{background:color-mix(in srgb,var(--accent) 22%,var(--chip))}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--c)}
 details{font-size:13px}
@@ -500,7 +513,13 @@ function render(){
   $("expFoot").innerHTML=`<tr><td class="lbl"></td><td class="lbl">合併（納入 ${nIn}／${codes.length} 檔）</td><td></td><td></td><td>${fmt(cAll)}</td><td>${fmt(pAll)}</td><td></td><td style="color:var(${gNow>=0?"--pos":"--neg"})">${sgn(gNow,2)}</td><td>${fl===null?"—":fmt(fl,0)}</td><td>${W.call?fmt(W.call):"—"}</td><td>${W.put?fmt(W.put):"—"}</td></tr>`;
   const off=codes.filter(c=>!state.included[c]);
   const st=$("incStatus");
-  st.textContent=`目前合併 Flip ${fl===null?"區間內無":fmt(fl,0)}｜總 GEX ${sgn(gNow,2)} 億｜${off.length?`已排除：${off.join("、")}`:"已納入全部到期"}。上方總覽、曲線、各區塊建議都只計算已勾選的到期。`;
+  const pos=gNow>=0,above=fl!==null&&S>=fl;
+  st.innerHTML=`目前合併 Flip <b class="hl-flip">${fl===null?"區間內無":fmt(fl,0)}</b>`
+    +(fl!==null?`<span class="hl-dist ${above?"up":"dn"}">現價${above?"高於":"低於"} ${fmt(Math.abs(S-fl),0)} 點</span>`:"")
+    +`｜總 GEX <b class="${pos?"hl-pos":"hl-neg"}">${sgn(gNow,2)} 億</b>`
+    +`<span class="hl-reg ${pos?"pos":"neg"}">${pos?"正 Gamma":"負 Gamma"}</span>`
+    +`｜${off.length?`<b class="hl-warn">已排除：${off.join("、")}</b>`:`<b class="hl-ok">已納入全部到期</b>`}`
+    +`<span class="hl-note">上方總覽、曲線、各區塊建議都只計算已勾選的到期。</span>`;
   if(state._flash){st.classList.remove("flash");void st.offsetWidth;st.classList.add("flash");setTimeout(()=>st.classList.remove("flash"),700);state._flash=false;}
   renderHistory();
 }
