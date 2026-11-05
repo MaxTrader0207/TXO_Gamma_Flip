@@ -61,10 +61,13 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .tag.neg{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
 .tag.na{background:var(--chip);color:var(--muted)}
 .tag.near{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
-.summary{margin:0;font-size:13px;line-height:1.6;padding:8px 10px;border-radius:6px;background:var(--chip)}
-.summary b,.advice b{display:block;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;margin-bottom:2px}
-.advice{font-size:13px;line-height:1.6}
-.advice ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.summary{margin:0;font-size:13px;line-height:1.6;padding:10px 12px;border-radius:6px;background:var(--chip)}
+.summary>b{display:block;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;margin-bottom:2px}
+.summary{display:flex;flex-direction:column;gap:6px}
+.summary .verdict{margin:0}
+.summary ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.summary .lv{font-size:12px;padding:6px 0;border-block:1px solid var(--line)}
+.summary em.warn{font-style:normal;font-weight:700;color:var(--neg)}
 table.mini{min-width:0;font-size:12px}
 table.mini th,table.mini td{padding:4px 6px}
 table.mini td:nth-child(2){font-family:var(--f-mono)}
@@ -146,7 +149,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
   </section>
 
   <section class="groups" id="groups"></section>
-  <div class="sub">各區塊的小結與操作建議依當日 Gamma 結構以固定規則自動產生，僅供判讀參考，不構成投資建議。</div>
+  <div class="sub">判讀以「合併」Gamma 體制為主軸（造市商避險的是整本帳），各區塊提供自己的到期結構、結算後 Flip 位移與價位。日波動統一取剩餘約 30 天到期的價平 IV；選擇權組合以前一日結算價估算。結果會隨上方「方向假設」改變，規則自動產生，僅供判讀參考，不構成投資建議。</div>
 
   <section class="panel">
     <div class="head">
@@ -364,6 +367,10 @@ function render(){
 
   // hero
   const gNow=gexAt(incRows,S,r),hNow=hedgeAt(incRows,S,r),W=walls(incRows,S,r);
+  // 參考日波動：取剩餘天數最接近 30 天的到期之價平 IV（類似 VIX 的 30 天概念），所有區塊共用同一把尺
+  let refCode=null;for(const c of codes){if(!state.included[c])continue;if(refCode===null||Math.abs(byExp[c][0].T*365-30)<Math.abs(byExp[refCode][0].T*365-30))refCode=c;}
+  let refAtm=byExp[refCode][0];for(const x of byExp[refCode])if(Math.abs(x.K-S)<Math.abs(refAtm.K-S))refAtm=x;
+  const sdRef=S*refAtm.ivUse/Math.sqrt(252);
   const fl=flips.all;
   $("flipAll").textContent=fl===null?"區間內無 Flip":fmt(fl,0);
   $("kSpot").textContent=fmt(S,0);
@@ -372,15 +379,16 @@ function render(){
   $("kHedge").textContent=`${fmt(Math.abs(hNow),0)} 口大台（${hNow>=0?"逆勢":"順勢"}）`;
   $("kWalls").textContent=`${W.call?fmt(W.call,0):"—"} / ${W.put?fmt(W.put,0):"—"}`;
   const card=$("regimeCard");card.className="panel regime";
-  const near=fl!==null&&Math.abs(S-fl)/S<0.005;
+  const near=fl!==null&&Math.abs(S-fl)<0.5*sdRef;
   let pill,read;
-  if(near){card.classList.add("near");pill="貼近 Flip｜體制轉換區";read=`現價距 Flip 不到 0.5%，避險方向隨時可能翻轉，波動最不穩定。`;}
+  if(near){card.classList.add("near");pill="貼近 Flip｜體制轉換區";read=`現價距 Flip 不到半個日波動（±${fmt(Math.round(sdRef/10)*10,0)} 點），避險方向隨時可能翻轉，波動最不穩定。`;}
   else if(gNow>=0){card.classList.add("pos");pill="正 Gamma｜波動壓抑";read=`造市商指數每漲 100 點需賣出約 ${fmt(Math.abs(hNow),0)} 口大台，跌則買回，價格傾向在 ${W.put?fmt(W.put,0):"下方"}～${W.call?fmt(W.call,0):"上方"} 間來回。`;}
   else{card.classList.add("neg");pill="負 Gamma｜波動放大";read=`造市商指數每跌 100 點需再賣出約 ${fmt(Math.abs(hNow),0)} 口大台，漲則追買，趨勢容易延續${fl?`，站回 ${fmt(fl,0)} 前波動偏大`:""}。`;}
   $("regimePill").textContent=pill;$("readout").textContent=read;
 
-  // group cards
+  // group cards —— 以「合併」Gamma 體制為主軸，各區塊提供自己的到期結構、結算後 Flip 位移與可執行的價位
   const gc=$("groups");gc.innerHTML="";
+  const ctx={S,r,grid,incRows,byExp,gAll:gNow,fAll:fl,wAll:W,sd:sdRef,refCode};
   for(const g of GROUPS){
     const rows=grpRows[g.key];const el=document.createElement("div");el.className="panel gcard";el.style.setProperty("--c",`var(${g.color})`);
     if(!rows.length){el.innerHTML=`<h3><span>${g.name}</span><span class="tag na">未納入</span></h3><div class="sub">目前沒有勾選此類到期。</div>`;gc.appendChild(el);continue;}
@@ -388,13 +396,16 @@ function render(){
     const oi=rows.reduce((s,x)=>s+x.oi,0);
     const codesIn=[...new Set(rows.map(x=>x.code))].sort((a,b)=>byExp[a][0].exp-byExp[b][0].exp);
     const expInfo=codesIn.map(c=>expiryStats(c,byExp[c],S,r));
-    const adv=groupAdvice(g,{S,gg,f,w,expInfo,combined:gNow,combinedFlip:fl});
-    const tagCls=adv.regime==="near"?"near":gg>=0?"pos":"neg";
-    el.innerHTML=`<h3><span>${g.name}</span><span class="tag ${tagCls}">${adv.label}</span></h3>
-      <div><span class="sub">Flip </span><span class="flip">${f===null?"區間內無":fmt(f,0)}</span></div>
-      <p class="summary"><b>小結</b>${adv.summary}</p>
-      <dl class="kv"><dt>GEX（每 1%）</dt><dd>${sgn(gg,2)} 億</dd><dt>Call / Put Wall</dt><dd>${w.call?fmt(w.call,0):"—"} / ${w.put?fmt(w.put,0):"—"}</dd><dt>未平倉合計</dt><dd>${fmt(oi,0)} 口</dd></dl>
-      <div class="advice"><b>操作建議</b><ul>${adv.tips.map(t=>`<li>${t}</li>`).join("")}</ul></div>
+    const adv=groupAdvice(g,{gg,w,expInfo},ctx);
+    el.innerHTML=`<h3><span>${g.name}</span><span class="tag ${adv.tagCls}">${adv.label}</span></h3>
+      <div class="summary">
+        <b>小結</b>
+        <p class="verdict">${adv.verdict}</p>
+        <dl class="kv lv">${adv.levels.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+        <b>具體操作</b>
+        <ol>${adv.plan.map(t=>`<li>${t}</li>`).join("")}</ol>
+      </div>
+      <dl class="kv"><dt>本區塊 GEX（每 1%）</dt><dd>${sgn(gg,2)} 億</dd><dt>本區塊 Flip</dt><dd>${f===null?"區間內無":fmt(f,0)}</dd><dt>本區塊 Call / Put Wall</dt><dd>${w.call?fmt(w.call,0):"—"} / ${w.put?fmt(w.put,0):"—"}</dd><dt>未平倉合計</dt><dd>${fmt(oi,0)} 口</dd></dl>
       <div class="tablewrap"><table class="mini"><thead><tr><th>到期</th><th>結算日｜剩餘</th><th>磁吸</th><th>痛點</th></tr></thead><tbody>${
         expInfo.map(e=>`<tr><td>${e.code}</td><td>${fmtD(e.exp).slice(5)}（${wk(e.exp)}）${e.days.toFixed(1)}天</td><td>${e.pin?fmt(e.pin):"—"}</td><td>${e.maxPain?fmt(e.maxPain):"—"}</td></tr>`).join("")}</tbody></table></div>`;
     gc.appendChild(el);
@@ -458,40 +469,87 @@ function expiryStats(code,rows,S,r){
   for(const s of ks){if(Math.abs(s-S)/S>0.08)continue;let pay=0;for(const k of ks){pay+=byK[k].c*Math.max(s-k,0)+byK[k].p*Math.max(k-s,0);}if(pay<low){low=pay;maxPain=s;}}
   return {code,exp:rows[0].exp,days:rows[0].T*365,pin,maxPain,grp:rows[0].grp};
 }
-function groupAdvice(g,{S,gg,f,w,expInfo,combined,combinedFlip}){
-  const F0=v=>v==null?"—":fmt(v,0);
-  const cw=w.call,pw=w.put;
-  const near=f!==null&&Math.abs(S-f)/S<0.005;
-  const regime=near?"near":gg>=0?"pos":"neg";
-  const label={near:"貼近 Flip",pos:"正 Gamma",neg:"負 Gamma"}[regime];
-  const next=expInfo[0];
-  const dist=f===null?"":`現價在 Flip ${F0(f)} ${S>=f?"上":"下"}方 ${fmt(Math.abs(S-f),0)} 點`;
-  const rangeTxt=(pw||cw)?`主要區間 ${F0(pw)}～${F0(cw)}`:"沒有明顯的牆";
-  const regimeTxt={near:"處於體制轉換區",pos:"為正 Gamma，避險偏逆勢、壓抑波動",neg:"為負 Gamma，避險偏順勢、放大波動"}[regime];
-  const agree=(gg>=0)===(combined>=0)?"與合併體制一致":"與合併體制相反，判讀時以合併為主、此類別為輔";
-  const summary=`${g.name}${regimeTxt}${dist?"，"+dist:"，掃描範圍內沒有 Flip"}，${rangeTxt}；${agree}。最近結算 ${next.code}（${fmtD(next.exp).slice(5)}，剩 ${next.days.toFixed(1)} 天）。`;
-  const tips=[];
+function strikeNear(rows,target,isCall,dir){
+  const ks=[...new Set(rows.filter(o=>o.isCall===isCall&&isFinite(o.px)&&o.px>0).map(o=>o.K))].sort((a,b)=>a-b);
+  if(!ks.length)return null;
+  if(dir<0){let b=null;for(const k of ks)if(k<=target)b=k;return b;}
+  if(dir>0){for(const k of ks)if(k>=target)return k;return null;}
+  return ks.reduce((a,k)=>Math.abs(k-target)<Math.abs(a-target)?k:a,ks[0]);
+}
+function px(rows,K,isCall){const o=rows.find(x=>x.K===K&&x.isCall===isCall);return o&&isFinite(o.px)?o.px:null;}
+const r10=v=>Math.round(v/10)*10;
+function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,refCode}){
+  const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
+  const next=expInfo[0],exRows=byExp[next.code];
+  // 1. 波動尺度：用此到期價平 IV 換算「日波動」與「到期波動」
+  let atm=exRows[0];for(const x of exRows)if(Math.abs(x.K-S)<Math.abs(atm.K-S))atm=x;
+  const sT=S*atm.ivUse*Math.sqrt(Math.max(exRows[0].T,1/365));
+  // 2. 合併體制（造市商看的是整本帳）
+  const z=fAll==null?null:(S-fAll)/sd;
+  const regime=z!=null&&Math.abs(z)<0.5?"near":gAll>=0?"pos":"neg";
+  // 3. 本區塊最近到期結算後，合併 Flip 移到哪裡（Gamma roll-off）
+  const post=incRows.filter(x=>x.code!==next.code);
+  const fPost=post.length?findFlip(grid,grid.map(s=>gexAt(post,s,r)),S):null;
+  const gPost=post.length?gexAt(post,S,r):0;
+  const share=gAll!==0?gg/Math.abs(gAll)*100:0;
+  const putW=wAll.put,callW=wAll.call;
+  const label={pos:"偏區間",neg:"偏順勢",near:"轉換區"}[regime];
+  const tagCls={pos:"pos",neg:"neg",near:"near"}[regime];
+  // 結算後體制變化
+  let roll;
+  if(gAll>=0&&gPost<0)roll=`<em class="warn">結算後轉為負 Gamma</em>：${next.code} 是目前主要的 Gamma 支撐，結算後${fPost!=null?`合併 Flip 升至 ${P(fPost)}，`:""}現價將落在 Flip 之下。`;
+  else if(gAll<0&&gPost>=0)roll=`結算後轉為正 Gamma：負 Gamma 部位隨 ${next.code} 退場${fPost!=null?`，合併 Flip 降至 ${P(fPost)}`:""}，波動可望收斂。`;
+  else roll=`結算後體制不變（${gPost>=0?"仍為正":"仍為負"} Gamma）${fPost!=null&&fAll!=null?`，合併 Flip 由 ${P(fAll)} 移至 ${P(fPost)}`:fPost!=null?`，合併 Flip 為 ${P(fPost)}`:""}。`;
+  const contrib=`本區塊占合併 GEX ${share>=0?"+":""}${fmt(share,0)}%（${(gg>=0)===(gAll>=0)?"順著":"抵銷"}合併方向）。`;
+  const expiring=g.key!=="M"&&next.days<=2.5;
+  let verdict;
+  const flipTxt=fAll==null?"掃描範圍內沒有合併 Flip":`現價${S>=fAll?"高於":"低於"}合併 Flip ${P(fAll)} 約 ${fmt(Math.abs(S-fAll),0)} 點（${fmt(Math.abs(z),1)} 個日波動）`;
+  const turnsNeg=gAll>=0&&gPost<0,turnsPos=gAll<0&&gPost>=0;
+  if(regime==="pos")verdict=`${flipTxt}，造市商逆勢避險，${turnsNeg?`結算前做區間${expiring?`（偏向 ${P(next.pin)} 磁吸）`:""}、結算後改順勢`:`${expiring?`結算前偏向 ${P(next.pin)} 磁吸，`:""}以區間操作為主`}。${roll}`;
+  else if(regime==="neg")verdict=`${flipTxt}，造市商順勢避險、波動放大，以順勢為主，${fAll!=null?"反彈到 Flip 前都算弱勢反彈":`整段價格都是負 Gamma，以 Call Wall ${P(callW)} 作為轉強關卡`}。${roll}`;
+  else verdict=`${flipTxt}，正負 Gamma 交界，最容易假突破，先等方向。${roll}`;
+  const levels=[["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["磁吸 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`]];
+  // 4. 具體操作：期貨價位（四捨五入到 10 點）＋本區塊最近到期的選擇權組合（以結算價估算）
+  const plan=[];
+  const W2=200;
   if(regime==="pos"){
-    tips.push(`區間思維：${F0(pw)}～${F0(cw)} 之間逢高偏空、逢低偏多，觸及 Call Wall ${F0(cw)} 不追價。`);
-    tips.push(`策略傾向：賣方或價差相對有利，履約價選在 Put Wall ${F0(pw)} 以下、Call Wall ${F0(cw)} 以上的區域。`);
-    tips.push(f!==null?`風控：跌破 Flip ${F0(f)} 轉入負 Gamma，區間策略失效，應減碼或改順勢。`:`風控：掃描範圍內沒有 Flip，正 Gamma 結構較穩，但跌破 Put Wall ${F0(pw)} 仍要停損。`);
+    const lo=r10(Math.max(fAll!=null?fAll+0.25*sd:-Infinity,putW||-Infinity,S-1.5*sd));
+    const hi=r10(Math.min(callW||Infinity,S+1.5*sd));
+    const stop=fAll!=null?r10(fAll-0.25*sd):r10(lo-0.5*sd);
+    const mid=r10((lo+hi)/2);
+    const tL=expiring&&next.pin&&next.pin>lo+0.25*sd?next.pin:mid,tS=expiring&&next.pin&&next.pin<hi-0.25*sd?next.pin:mid;
+    plan.push(`期貨低接：回落 ${fmt(lo,0)} 附近分批偏多，停損收盤跌破 ${fmt(stop,0)}（Flip 下方），目標 ${P(tL)}。`);
+    plan.push(`期貨高出：上攻 ${fmt(hi,0)} 附近不追價、多單減碼或短空，停損站穩 ${fmt(r10(hi+0.5*sd),0)}，目標 ${P(tS)}。`);
+    const sp=strikeNear(exRows,Math.min(fAll??S,S-sT),false,-1),sc=strikeNear(exRows,Math.max(callW||0,S+sT),true,1);
+    const spw=sp&&strikeNear(exRows,sp-W2,false,-1),scw=sc&&strikeNear(exRows,sc+W2,true,1);
+    if(sp&&sc&&spw&&scw){const cr=px(exRows,sp,false)-px(exRows,spw,false)+px(exRows,sc,true)-px(exRows,scw,true);
+      plan.push(`選擇權（${next.code}）：鐵兀鷹 賣 ${fmt(sp)}P／買 ${fmt(spw)}P＋賣 ${fmt(sc)}C／買 ${fmt(scw)}C，以結算價估收約 ${fmt(cr,1)} 點，單邊最大風險約 ${fmt(Math.max(sp-spw,scw-sc)-cr,1)} 點；Put 履約價放在 Flip 之下，跌破 Flip 即出場。`);}
+    plan.push(`失效條件：收盤跌破合併 Flip ${P(fAll)}，區間策略全部停止，改用負 Gamma 的順勢做法。`);
   }else if(regime==="neg"){
-    tips.push(`順勢思維：波動放大，跌破 Put Wall ${F0(pw)} 容易加速，${f!==null?`反彈未站回 Flip ${F0(f)} 前不宜重押多單`:"範圍內沒有 Flip，反彈力道容易不足"}。`);
-    tips.push("策略傾向：避免裸賣選擇權，偏向買方或有保護的價差，停損放寬、部位縮小。");
-    tips.push(f!==null?`轉折：收盤站回 Flip ${F0(f)} 之上，避險轉為逆勢，波動可望收斂。`:`轉折：觀察能否收復 Call Wall ${F0(cw)}，再評估轉為區間操作。`);
+    const fl0=fAll!=null?fAll:(callW||S+sd);
+    const sellZone=r10(Math.min(fl0-0.25*sd,S+1*sd));
+    const stop=r10(fl0+0.25*sd);
+    const t1=putW&&putW<S?putW:r10(S-sd),t2=r10(t1-sd);
+    plan.push(`期貨順勢：反彈至 ${fmt(sellZone,0)}～${P(fl0)} 不過偏空，停損收盤站上 ${fmt(stop,0)}，目標 ${P(t1)}，跌破再看 ${fmt(t2,0)}。`);
+    plan.push(fAll!=null?`翻多條件：收盤站上 ${fmt(stop,0)}，避險轉為逆勢，空單全數回補，改回區間思維；負 Gamma 下的回補也會加速上漲，不要逆勢加空。`:`轉強條件：收盤站上 ${fmt(stop,0)}（Call Wall 之上）空單回補；負 Gamma 下的回補也會加速上漲，不要逆勢加空。`);
+    const k1=strikeNear(exRows,S,false,-1),k2=k1&&strikeNear(exRows,Math.min(t1,k1-100),false,-1);
+    if(k1&&k2&&k2<k1){const db=px(exRows,k1,false)-px(exRows,k2,false);
+      plan.push(`選擇權（${next.code}）：買 ${fmt(k1)}P／賣 ${fmt(k2)}P 熊市價差，以結算價估成本約 ${fmt(db,1)} 點，最大獲利約 ${fmt(k1-k2-db,1)} 點；避免裸賣價平附近的選擇權。`);}
+    plan.push("部位控管：日波動放大，口數比正 Gamma 時減半，停損放寬到 0.5 個日波動以上。");
   }else{
-    tips.push(`現價距 Flip ${F0(f)} 不到 0.5%，造市商避險方向隨時翻轉，最容易出現假突破。`);
-    tips.push(`策略傾向：降低部位，等收盤明確站上或跌破 ${F0(f)} 再決定區間或順勢。`);
-    tips.push(`參考邊界：上看 Call Wall ${F0(cw)}、下看 Put Wall ${F0(pw)}。`);
+    const up=r10(fAll+0.5*sd),dn=r10(fAll-0.5*sd);
+    plan.push(`觀望為主：${fmt(dn,0)}～${fmt(up,0)} 之間不建新倉，現有部位減碼。`);
+    plan.push(`條件單：收盤站上 ${fmt(up,0)} 轉區間偏多（停損 ${P(fAll)}）；跌破 ${fmt(dn,0)} 轉順勢偏空（停損 ${P(fAll)}）。`);
+    const k0=strikeNear(exRows,S,true,0);
+    if(k0&&px(exRows,k0,true)!=null&&px(exRows,k0,false)!=null){const c=px(exRows,k0,true)+px(exRows,k0,false);
+      plan.push(`選擇權（${next.code}）：Flip 附近容易出現波動擴張，可考慮買 ${fmt(k0)} 跨式，以結算價估成本約 ${fmt(c,1)} 點，損平 ${fmt(k0-c,0)}／${fmt(k0+c,0)}。`);}
   }
-  if(g.key!=="M"&&next.days<=2.5){
-    tips.push(`結算倒數：${next.code} 剩 ${next.days.toFixed(1)} 天，未平倉最大的 ${F0(next.pin)} 可能產生磁吸，最大痛點 ${F0(next.maxPain)}；結算後此到期的 Gamma 歸零，留意波動放大。`);
-  }else if(g.key!=="M"){
-    tips.push(`結算節奏：${next.code} 還有 ${next.days.toFixed(1)} 天，磁吸效果尚弱；結算前 1～2 天再留意 ${F0(next.pin)} 附近。`);
-  }else{
-    tips.push(`月選剩 ${next.days.toFixed(1)} 天，Gamma 較分散，作為中線結構參考；最大痛點 ${F0(next.maxPain)}。`);
-  }
-  return {regime,label,summary,tips};
+  if(turnsNeg){const fp=fPost??S;
+    plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：若指數仍在 ${P(fPost)} 之下，區間單全部了結，改為反彈至 ${fmt(r10(fp-0.25*sd),0)}～${P(fPost)} 不過偏空，停損站上 ${fmt(r10(fp+0.25*sd),0)}。`);}
+  if(turnsPos)plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：負 Gamma 部位退場，空單逢低回補，若站穩 ${P(fPost)} 改回區間思維。`);
+  if(expiring)plan.push(`結算日提醒：${next.code} 剩 ${next.days.toFixed(1)} 天，結算前價格容易被 ${P(next.pin)} 吸住；最後結算價取 13:00～13:30 平均，結算日午盤不宜逆勢押注價平。`);
+  plan.push(contrib);
+  return {regime,label,tagCls,verdict,levels,plan};
 }
 
 /* ---------- history ---------- */
