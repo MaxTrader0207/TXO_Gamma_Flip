@@ -83,6 +83,13 @@ th{color:var(--muted);font-weight:500;font-size:12px}
 th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 td{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 td.lbl{font-family:var(--f-body)}
+.exportbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:-4px}
+.exbtns{display:flex;flex-wrap:wrap;gap:6px}
+.exbtns button{padding:5px 12px;font-size:12px}
+.exbtns.small button{padding:3px 9px;font-size:11.5px}
+body.nodl .dl{display:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:20;max-width:calc(100% - 32px)}
+.copybox{width:100%;min-height:160px;font-family:var(--f-mono);font-size:12px;box-sizing:border-box}
 tr.off td{opacity:.42}
 tr.off td:first-child{opacity:1}
 tfoot td{font-weight:600;border-top:2px solid var(--ink);border-bottom:none}
@@ -156,7 +163,16 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
     </div>
   </section>
 
+  <div class="exportbar">
+    <h2>各區塊小結與具體操作</h2>
+    <div class="exbtns">
+      <button type="button" data-ex="copy" data-g="all">複製全部</button>
+      <button type="button" data-ex="md" data-g="all" class="dl">下載全部 .md</button>
+      <button type="button" data-ex="txt" data-g="all" class="dl">下載全部 .txt</button>
+    </div>
+  </div>
   <section class="groups" id="groups"></section>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <div class="sub">判讀以「合併」Gamma 體制為主軸（造市商避險的是整本帳），各區塊提供自己的到期結構、結算後 Flip 位移與價位。日波動統一取剩餘約 30 天到期的價平 IV；停損緩衝為 0.5 個近 5 日 ATR（台指期近月一般盤），價差寬度為 1 個 ATR 取整到 100 點，手動上傳或範例資料時以 1.6 倍日波動估算 ATR；選擇權組合以前一日結算價估算。結果會隨上方「方向假設」改變，規則自動產生，僅供判讀參考，不構成投資建議。</div>
 
   <section class="panel">
@@ -402,6 +418,9 @@ function render(){
 
   // group cards —— 以「合併」Gamma 體制為主軸，各區塊提供自己的到期結構、結算後 Flip 位移與可執行的價位
   const gc=$("groups");gc.innerHTML="";
+  for(const k in exportStore)delete exportStore[k];
+  exportMeta={S,fAll:fl,gAll:gNow,atr:state.atr>0?state.atr:null,atrEst:state.atr>0?null:Math.round(1.6*sdRef/10)*10,mode:$("signMode").selectedOptions[0].textContent,
+    dataDate:state.source==="auto"?state.tradeDate:(state.source==="demo"?"範例資料":state.source),included:codes.filter(c=>state.included[c]),excluded:codes.filter(c=>!state.included[c])};
   const atrReal=state.atr>0?state.atr:null,atr=atrReal||1.6*sdRef;
   $("kAtr").textContent=atrReal?`${fmt(atrReal,0)} 點`:`約 ${fmt(Math.round(atr/10)*10,0)} 點（估）`;
   const ctx={S,r,grid,incRows,byExp,gAll:gNow,fAll:fl,wAll:W,sd:sdRef,refCode,A:atr,atrReal};
@@ -413,7 +432,9 @@ function render(){
     const codesIn=[...new Set(rows.map(x=>x.code))].sort((a,b)=>byExp[a][0].exp-byExp[b][0].exp);
     const expInfo=codesIn.map(c=>expiryStats(c,byExp[c],S,r));
     const adv=groupAdvice(g,{gg,w,expInfo},ctx);
+    exportStore[g.key]={g,adv,next:expInfo[0]};
     el.innerHTML=`<h3><span>${g.name}</span><span class="tag ${adv.tagCls}">${adv.label}</span></h3>
+      <div class="exbtns small"><button type="button" data-ex="copy" data-g="${g.key}">複製</button><button type="button" data-ex="md" data-g="${g.key}" class="dl">下載 .md</button><button type="button" data-ex="txt" data-g="${g.key}" class="dl">下載 .txt</button></div>
       <div class="summary">
         <b>小結</b>
         <p class="verdict">${adv.verdict}</p>
@@ -490,6 +511,67 @@ document.querySelector(".quick").addEventListener("click",e=>{
   const list=[...new Set(state.rows.map(x=>x.code))].sort((a,b)=>{const ea=state.rows.find(x=>x.code===a).exp,eb=state.rows.find(x=>x.code===b).exp;return ea-eb;});
   list.forEach((c,i)=>{const g=groupOf(c);state.included[c]=k==="all"||(k==="near"?i<2:k.includes(g));});
   rerender();});
+
+/* ---------- export ---------- */
+const exportStore={};let exportMeta=null;
+const strip=h=>h.replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ");
+function exportText(keys,fmtType){
+  const m=exportMeta,md=fmtType==="md",L=[];
+  const now=new Date(),stamp=`${fmtD(now)} ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+  L.push(md?"# TXO Gamma Flip 小結與具體操作":"【TXO Gamma Flip 小結與具體操作】");
+  const metaStart=L.length+(md?1:0);if(md)L.push("");
+  L.push(`資料日：${m.dataDate}｜台指期：${fmt(m.S,0)}｜合併 Flip：${m.fAll==null?"區間內無":fmt(m.fAll,0)}｜總 GEX：${sgn(m.gAll,2)} 億／1%`);
+  L.push(`近 5 日 ATR：${m.atr?fmt(m.atr,0)+" 點":`約 ${fmt(m.atrEst,0)} 點（估）`}｜方向假設：${m.mode}`);
+  if(m.excluded.length)L.push(`已排除到期：${m.excluded.join("、")}`);
+  L.push(`匯出時間：${stamp}`);
+  if(md)for(let i=metaStart;i<L.length;i++)L[i]="- "+L[i];
+  for(const k of keys){const e=exportStore[k];if(!e)continue;const {g,adv,next}=e;
+    L.push("");
+    L.push(md?`## ${g.name}｜${adv.label}`:`■ ${g.name}｜${adv.label}`);
+    L.push(md?`**小結**：${strip(adv.verdict)}`:`小結：${strip(adv.verdict)}`);
+    L.push("");
+    for(const [a,b] of adv.levels)L.push(md?`- ${a}：${b}`:`・${a}：${b}`);
+    L.push("");
+    L.push(md?"**具體操作**":"具體操作：");
+    adv.plan.forEach((t,i)=>L.push(`${i+1}. ${strip(t)}`));
+  }
+  L.push("");
+  L.push(md?"> 依當日 Gamma 結構以固定規則自動產生，僅供判讀參考，不構成投資建議。":"※ 依當日 Gamma 結構以固定規則自動產生，僅供判讀參考，不構成投資建議。");
+  return L.join("\n");
+}
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},2600);}
+let dlNs,dlMode="none";
+(async()=>{
+  try{if(window.claude?.use){dlNs=await window.claude.use("downloads");if(dlNs){dlMode="cap";return;}
+      // 在 Claude 頁面內但沒有下載能力：隱藏下載鈕
+      document.body.classList.add("nodl");return;}}catch(e){}
+  dlMode="blob";
+})();
+async function saveFile(name,text){
+  if(dlMode==="cap"){
+    try{const r=await dlNs.save({filename:name,data:text});if(r.status==="saved")toast(`已下載 ${name}`);}
+    catch(err){const c=err&&err.code;toast(c==="declined"?"已取消下載":c==="rate_limited"?"下載視窗已開啟，請稍候再試":"這個檢視畫面無法下載，請改用「複製」");}
+    return;}
+  if(dlMode==="blob"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/plain;charset=utf-8"}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);toast(`已下載 ${name}`);return;}
+  toast("下載功能還在載入，請稍候再試");
+}
+function copyFallback(text){
+  const ta=document.createElement("textarea");ta.value=text;ta.className="copybox";ta.setAttribute("aria-label","匯出文字");
+  document.querySelector(".exportbar").after(ta);ta.focus();ta.select();
+  toast("無法直接複製，已選取文字，請按 Ctrl+C／⌘C");setTimeout(()=>ta.remove(),20000);
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest("[data-ex]");if(!b||!exportMeta)return;
+  const keys=b.dataset.g==="all"?GROUPS.map(g=>g.key).filter(k=>exportStore[k]):[b.dataset.g];
+  const type=b.dataset.ex,text=exportText(keys,type==="md"?"md":"txt");
+  const tag=b.dataset.g==="all"?"全部":GROUPS.find(g=>g.key===b.dataset.g).name;
+  const day=(exportMeta.dataDate||"").replace(/-/g,"");
+  if(type==="copy"){
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>toast(`已複製「${tag}」小結與操作`),()=>copyFallback(text));}
+    else copyFallback(text);
+    return;}
+  saveFile(`TXO_GammaFlip_${tag}_${day||"data"}.${type}`,text);
+});
 
 /* ---------- per-group advice ---------- */
 function expiryStats(code,rows,S,r){
