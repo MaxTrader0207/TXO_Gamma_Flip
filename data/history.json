@@ -418,7 +418,12 @@
 "short_flipF": null,
 "short_gexF": -179.015,
 "short_flipM": null,
-"short_gexM": -29.711
+"short_gexM": -29.711,
+"open": 47164.0,
+"high": 47337.0,
+"low": 46217.0,
+"close": 46272.0,
+"tr": 1120.0
 },
 {
 "date": "2026-10-27",
@@ -438,7 +443,12 @@
 "short_flipF": null,
 "short_gexF": -8.71,
 "short_flipM": null,
-"short_gexM": -33.245
+"short_gexM": -33.245,
+"open": 46505.0,
+"high": 46846.0,
+"low": 46050.0,
+"close": 46081.0,
+"tr": 796.0
 },
 {
 "date": "2026-10-28",
@@ -458,7 +468,12 @@
 "short_flipF": null,
 "short_gexF": -78.817,
 "short_flipM": null,
-"short_gexM": -38.954
+"short_gexM": -38.954,
+"open": 46971.0,
+"high": 47272.0,
+"low": 46892.0,
+"close": 47244.0,
+"tr": 1191.0
 },
 {
 "date": "2026-10-29",
@@ -478,7 +493,12 @@
 "short_flipF": null,
 "short_gexF": -312.448,
 "short_flipM": null,
-"short_gexM": -40.094
+"short_gexM": -40.094,
+"open": 47187.0,
+"high": 47218.0,
+"low": 46310.0,
+"close": 46577.0,
+"tr": 934.0
 },
 {
 "date": "2026-10-30",
@@ -498,7 +518,13 @@
 "short_flipF": null,
 "short_gexF": -9.817,
 "short_flipM": null,
-"short_gexM": -38.116
+"short_gexM": -38.116,
+"open": 45410.0,
+"high": 45597.0,
+"low": 44908.0,
+"close": 45301.0,
+"tr": 1669.0,
+"atr5": 1142.0
 },
 {
 "date": "2026-11-02",
@@ -518,7 +544,13 @@
 "short_flipF": null,
 "short_gexF": -15.766,
 "short_flipM": null,
-"short_gexM": -41.24
+"short_gexM": -41.24,
+"open": 45000.0,
+"high": 45332.0,
+"low": 44700.0,
+"close": 45256.0,
+"tr": 632.0,
+"atr5": 1044.4
 },
 {
 "date": "2026-11-03",
@@ -538,7 +570,13 @@
 "short_flipF": null,
 "short_gexF": -20.944,
 "short_flipM": null,
-"short_gexM": -29.868
+"short_gexM": -29.868,
+"open": 44400.0,
+"high": 44686.0,
+"low": 43324.0,
+"close": 43376.0,
+"tr": 1932.0,
+"atr5": 1271.6
 },
 {
 "date": "2026-11-04",
@@ -558,8 +596,14 @@
 "short_flipF": null,
 "short_gexF": -59.637,
 "short_flipM": null,
-"short_gexM": -30.734
+"short_gexM": -30.734,
+"open": 43450.0,
+"high": 43774.0,
+"low": 42050.0,
+"close": 43204.0,
+"tr": 1724.0,
+"atr5": 1378.2
 }
 ],
-"updatedAt": "2026-11-05T01:53:39+08:00"
+"updatedAt": "2026-11-05T14:15:53+08:00"
 }
