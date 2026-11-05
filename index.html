@@ -29,6 +29,8 @@ h2{font-size:15px;margin:0;font-weight:700}
 .sub{color:var(--muted);font-size:13px}
 .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.toplinks{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.moblink{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--accent);text-decoration:none}
 .src{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--chip);color:var(--muted)}
 .src.demo{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--ink)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
@@ -126,7 +128,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
       <h1>TXO Gamma Flip 戰情板</h1>
       <div class="sub">台指選擇權 週三週選 × 週五週選 × 月選｜造市商 Gamma 曝險與 Flip 價位</div>
     </div>
-    <span id="srcBadge" class="src demo">範例資料</span>
+    <div class="toplinks"><a id="mobLink" class="moblink" href="./mobile.html" target="_blank" rel="noopener">手機版</a><span id="srcBadge" class="src demo">範例資料</span></div>
   </div>
 
   <section class="panel">
@@ -401,6 +403,7 @@ function render(){
   const codes=Object.keys(byExp).sort((a,b)=>byExp[a][0].exp-byExp[b][0].exp);
   for(const c of codes)if(state.included[c]===undefined)state.included[c]=true;
   const incRows=codes.filter(c=>state.included[c]).flatMap(c=>byExp[c]);
+  if(!incRows.length){$("msg").textContent="至少要勾選一個到期才能計算。";const c0=codes[0];state.included[c0]=true;return render();}
   const grpRows={W:[],F:[],M:[]};for(const c of codes)if(state.included[c])grpRows[byExp[c][0].grp].push(...byExp[c]);
 
   const N=400,grid=[];for(let i=0;i<=N;i++)grid.push(S*(1-pct+2*pct*i/N));
@@ -682,7 +685,7 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
   if(turnsPos)plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：負 Gamma 部位退場，空單逢低回補，若站穩 ${P(fPost)} 改回區間思維。`);
   if(expiring)plan.push(`結算日提醒：${next.code} 剩 ${next.days.toFixed(1)} 天，結算前價格容易被 ${P(next.pin)} 吸住；最後結算價取 13:00～13:30 平均，結算日午盤不宜逆勢押注價平。`);
   plan.push(contrib);
-  return {regime,label,tagCls,verdict,levels,plan};
+  return {regime,label,tagCls,verdict,levels,plan,fPost,gPost,next,sT,share,turnsNeg,turnsPos};
 }
 
 /* ---------- history ---------- */
@@ -770,6 +773,7 @@ async function loadAuto(){
   const timer=setTimeout(()=>{if(!got&&mode!=="manual")$("msg").textContent="每日資料暫時讀不到，先顯示範例資料。";},10000);
   const db=window.claude?.use?await window.claude.use("db").catch(()=>null):null;
   if(db){
+    $("mobLink").href="https://claude.ai/artifact/DirXvHpiBL8bqYbdwHbfiZ";
     db.doc("txo/latest").onSnapshot(s=>{if(s.exists&&applySnapshot(s.data(),"")){got=true;clearTimeout(timer);}
       else if(!s.metadata?.fromCache&&!got)$("msg").textContent="尚未寫入每日資料，先顯示範例資料。";},
       ()=>{if(!got)$("msg").textContent="每日資料讀取失敗，先顯示範例資料。";});
