@@ -164,7 +164,8 @@ def parse_futures(txt):
     if not head:
         return {}
     c = dict(d=col(head, "交易日期"), prod=col(head, "契約", "商品代號", exact=True), mon=col(head, "到期月份"),
-             settle=col(head, "結算價"), close=col(head, "收盤價"), sess=col(head, "交易時段"))
+             settle=col(head, "結算價"), close=col(head, "收盤價"), sess=col(head, "交易時段"),
+             o=col(head, "開盤價"), h=col(head, "最高價"), l=col(head, "最低價"))
     best = {}
     for r in rows:
         if c["prod"] >= 0 and r[c["prod"]].upper() != "TX":
@@ -179,7 +180,8 @@ def parse_futures(txt):
             px = num(r[c["close"]])
         td = ymd(r[c["d"]])
         if td and px > 0 and (td not in best or code < best[td][0]):
-            best[td] = (code, px)
+            ohlc = [num(r[c[k]]) if c[k] >= 0 else float("nan") for k in ("o", "h", "l", "close")]
+            best[td] = (code, px, *ohlc)
     return best
 
 
@@ -299,9 +301,16 @@ def main():
     hist = json.load(open(hist_path, encoding="utf-8")) if os.path.exists(hist_path) else {"items": []}
     items = {it["date"]: it for it in hist["items"]}
 
+    # 台指期近月一般盤 OHLC（供 ATR 計算），已存在的日期也補上
+    for d, v in fut.items():
+        o, h, l, c = v[2:]
+        if d.isoformat() in items and all(x > 0 for x in (h, l, c)):
+            items[d.isoformat()].update({"open": o, "high": h, "low": l, "close": c})
+
     latest = None
     for d in days:
-        fcode, F = fut[d]
+        fcode, F = fut[d][:2]
+        o, h, l, c = fut[d][2:]
         val = datetime(d.year, d.month, d.day, 13, 45, tzinfo=TPE)
         rows = [r for r in opt[d] if date.fromisoformat(r[1]) > d and abs(r[2] - F) / F <= 0.15]
         if (d.isoformat() in items) and d != days[-1]:
@@ -313,10 +322,29 @@ def main():
         json.dump(snap, open(os.path.join(DATA, "daily", d.strftime("%Y%m%d") + ".json"), "w", encoding="utf-8"),
                   ensure_ascii=False, separators=(",", ":"))
         items[d.isoformat()] = {"date": d.isoformat(), "F": F, **{f"{m}_{k}": v for m, s in summ.items() for k, v in s.items()}}
+        if all(x > 0 for x in (h, l, c)):
+            items[d.isoformat()].update({"open": o, "high": h, "low": l, "close": c})
         latest = snap
         print(d, "F", F, "flip", summ["naive"]["flip"], "rows", len(rows))
 
+    # 近 5 日 ATR（True Range = max(H-L, |H-前收|, |L-前收|)）
+    seq = sorted(items.values(), key=lambda x: x["date"])
+    trs, prev = [], None
+    for it in seq:
+        if not all(k in it for k in ("high", "low", "close")):
+            prev, trs = None, []
+            it.pop("atr5", None)
+            continue
+        tr = it["high"] - it["low"] if prev is None else max(it["high"] - it["low"], abs(it["high"] - prev), abs(it["low"] - prev))
+        trs.append(tr)
+        prev = it["close"]
+        it["tr"] = round(tr, 1)
+        if len(trs) >= 5:
+            it["atr5"] = round(sum(trs[-5:]) / 5, 1)
     if latest:
+        it = items.get(latest["tradeDate"], {})
+        latest["atr5"] = it.get("atr5")
+        latest["ohlc"] = [it.get(k) for k in ("open", "high", "low", "close")]
         json.dump(latest, open(os.path.join(DATA, "latest.json"), "w", encoding="utf-8"),
                   ensure_ascii=False, separators=(",", ":"))
     hist["items"] = sorted(items.values(), key=lambda x: x["date"])[-250:]

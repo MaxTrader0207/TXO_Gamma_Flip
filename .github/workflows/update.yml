@@ -37,7 +37,7 @@ jobs:
         run: |
           DAYS="${{ github.event.inputs.days }}"
           if [ -z "$DAYS" ]; then
-            if [ -f data/history.json ]; then DAYS=7; else DAYS=45; fi
+            if [ -f data/history.json ]; then DAYS=14; else DAYS=45; fi
           fi
           python scripts/txo_gex.py --days "$DAYS"
       - name: 提交資料

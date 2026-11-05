@@ -134,6 +134,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <dt>距 Flip</dt><dd id="kDist">—</dd>
         <dt>總 GEX（每 1%）</dt><dd id="kGex">—</dd>
         <dt>每 100 點避險量</dt><dd id="kHedge">—</dd>
+        <dt>近 5 日 ATR</dt><dd id="kAtr">—</dd>
         <dt>Call Wall / Put Wall</dt><dd id="kWalls">—</dd>
       </dl>
       <p id="readout" class="read"></p>
@@ -149,7 +150,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
   </section>
 
   <section class="groups" id="groups"></section>
-  <div class="sub">判讀以「合併」Gamma 體制為主軸（造市商避險的是整本帳），各區塊提供自己的到期結構、結算後 Flip 位移與價位。日波動統一取剩餘約 30 天到期的價平 IV；選擇權組合以前一日結算價估算。結果會隨上方「方向假設」改變，規則自動產生，僅供判讀參考，不構成投資建議。</div>
+  <div class="sub">判讀以「合併」Gamma 體制為主軸（造市商避險的是整本帳），各區塊提供自己的到期結構、結算後 Flip 位移與價位。日波動統一取剩餘約 30 天到期的價平 IV；停損緩衝為 0.5 個近 5 日 ATR（台指期近月一般盤），價差寬度為 1 個 ATR 取整到 100 點，手動上傳或範例資料時以 1.6 倍日波動估算 ATR；選擇權組合以前一日結算價估算。結果會隨上方「方向假設」改變，規則自動產生，僅供判讀參考，不構成投資建議。</div>
 
   <section class="panel">
     <div class="head">
@@ -388,7 +389,9 @@ function render(){
 
   // group cards —— 以「合併」Gamma 體制為主軸，各區塊提供自己的到期結構、結算後 Flip 位移與可執行的價位
   const gc=$("groups");gc.innerHTML="";
-  const ctx={S,r,grid,incRows,byExp,gAll:gNow,fAll:fl,wAll:W,sd:sdRef,refCode};
+  const atrReal=state.atr>0?state.atr:null,atr=atrReal||1.6*sdRef;
+  $("kAtr").textContent=atrReal?`${fmt(atrReal,0)} 點`:`約 ${fmt(Math.round(atr/10)*10,0)} 點（估）`;
+  const ctx={S,r,grid,incRows,byExp,gAll:gNow,fAll:fl,wAll:W,sd:sdRef,refCode,A:atr,atrReal};
   for(const g of GROUPS){
     const rows=grpRows[g.key];const el=document.createElement("div");el.className="panel gcard";el.style.setProperty("--c",`var(${g.color})`);
     if(!rows.length){el.innerHTML=`<h3><span>${g.name}</span><span class="tag na">未納入</span></h3><div class="sub">目前沒有勾選此類到期。</div>`;gc.appendChild(el);continue;}
@@ -478,7 +481,8 @@ function strikeNear(rows,target,isCall,dir){
 }
 function px(rows,K,isCall){const o=rows.find(x=>x.K===K&&x.isCall===isCall);return o&&isFinite(o.px)?o.px:null;}
 const r10=v=>Math.round(v/10)*10;
-function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,refCode}){
+function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,refCode,A,atrReal}){
+  const half=r10(A/2),width=Math.max(100,Math.round(A/100)*100);
   const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
   const next=expInfo[0],exRows=byExp[next.code];
   // 1. 波動尺度：用此到期價平 IV 換算「日波動」與「到期波動」
@@ -508,18 +512,18 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
   if(regime==="pos")verdict=`${flipTxt}，造市商逆勢避險，${turnsNeg?`結算前做區間${expiring?`（偏向 ${P(next.pin)} 磁吸）`:""}、結算後改順勢`:`${expiring?`結算前偏向 ${P(next.pin)} 磁吸，`:""}以區間操作為主`}。${roll}`;
   else if(regime==="neg")verdict=`${flipTxt}，造市商順勢避險、波動放大，以順勢為主，${fAll!=null?"反彈到 Flip 前都算弱勢反彈":`整段價格都是負 Gamma，以 Call Wall ${P(callW)} 作為轉強關卡`}。${roll}`;
   else verdict=`${flipTxt}，正負 Gamma 交界，最容易假突破，先等方向。${roll}`;
-  const levels=[["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["磁吸 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`]];
+  const levels=[["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["磁吸 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`],[atrReal?"近 5 日 ATR":"ATR（估）",`${fmt(r10(A),0)} 點｜停損 ${fmt(half,0)}／價差寬 ${fmt(width,0)}`]];
   // 4. 具體操作：期貨價位（四捨五入到 10 點）＋本區塊最近到期的選擇權組合（以結算價估算）
   const plan=[];
-  const W2=200;
+  const W2=width;
   if(regime==="pos"){
     const lo=r10(Math.max(fAll!=null?fAll+0.25*sd:-Infinity,putW||-Infinity,S-1.5*sd));
     const hi=r10(Math.min(callW||Infinity,S+1.5*sd));
-    const stop=fAll!=null?r10(fAll-0.25*sd):r10(lo-0.5*sd);
+    const stop=fAll!=null?r10(fAll-0.5*A):r10(lo-0.5*A);
     const mid=r10((lo+hi)/2);
     const tL=expiring&&next.pin&&next.pin>lo+0.25*sd?next.pin:mid,tS=expiring&&next.pin&&next.pin<hi-0.25*sd?next.pin:mid;
     plan.push(`期貨低接：回落 ${fmt(lo,0)} 附近分批偏多，停損收盤跌破 ${fmt(stop,0)}（Flip 下方），目標 ${P(tL)}。`);
-    plan.push(`期貨高出：上攻 ${fmt(hi,0)} 附近不追價、多單減碼或短空，停損站穩 ${fmt(r10(hi+0.5*sd),0)}，目標 ${P(tS)}。`);
+    plan.push(`期貨高出：上攻 ${fmt(hi,0)} 附近不追價、多單減碼或短空，停損站穩 ${fmt(r10(hi+0.5*A),0)}，目標 ${P(tS)}。`);
     const sp=strikeNear(exRows,Math.min(fAll??S,S-sT),false,-1),sc=strikeNear(exRows,Math.max(callW||0,S+sT),true,1);
     const spw=sp&&strikeNear(exRows,sp-W2,false,-1),scw=sc&&strikeNear(exRows,sc+W2,true,1);
     if(sp&&sc&&spw&&scw){const cr=px(exRows,sp,false)-px(exRows,spw,false)+px(exRows,sc,true)-px(exRows,scw,true);
@@ -527,17 +531,17 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
     plan.push(`失效條件：收盤跌破合併 Flip ${P(fAll)}，區間策略全部停止，改用負 Gamma 的順勢做法。`);
   }else if(regime==="neg"){
     const fl0=fAll!=null?fAll:(callW||S+sd);
-    const sellZone=r10(Math.min(fl0-0.25*sd,S+1*sd));
-    const stop=r10(fl0+0.25*sd);
-    const t1=putW&&putW<S?putW:r10(S-sd),t2=r10(t1-sd);
+    const sellZone=r10(Math.min(fl0-0.5*A,S+A));
+    const stop=r10(fl0+0.5*A);
+    const t1=putW&&putW<S?putW:r10(S-A),t2=r10(t1-A);
     plan.push(`期貨順勢：反彈至 ${fmt(sellZone,0)}～${P(fl0)} 不過偏空，停損收盤站上 ${fmt(stop,0)}，目標 ${P(t1)}，跌破再看 ${fmt(t2,0)}。`);
     plan.push(fAll!=null?`翻多條件：收盤站上 ${fmt(stop,0)}，避險轉為逆勢，空單全數回補，改回區間思維；負 Gamma 下的回補也會加速上漲，不要逆勢加空。`:`轉強條件：收盤站上 ${fmt(stop,0)}（Call Wall 之上）空單回補；負 Gamma 下的回補也會加速上漲，不要逆勢加空。`);
-    const k1=strikeNear(exRows,S,false,-1),k2=k1&&strikeNear(exRows,Math.min(t1,k1-100),false,-1);
+    const k1=strikeNear(exRows,S,false,-1),k2=k1&&strikeNear(exRows,k1-width,false,-1);
     if(k1&&k2&&k2<k1){const db=px(exRows,k1,false)-px(exRows,k2,false);
       plan.push(`選擇權（${next.code}）：買 ${fmt(k1)}P／賣 ${fmt(k2)}P 熊市價差，以結算價估成本約 ${fmt(db,1)} 點，最大獲利約 ${fmt(k1-k2-db,1)} 點；避免裸賣價平附近的選擇權。`);}
-    plan.push("部位控管：日波動放大，口數比正 Gamma 時減半，停損放寬到 0.5 個日波動以上。");
+    plan.push(`部位控管：波動放大，口數比正 Gamma 時減半，停損至少 1 個 ATR（約 ${fmt(r10(A),0)} 點）。`);
   }else{
-    const up=r10(fAll+0.5*sd),dn=r10(fAll-0.5*sd);
+    const up=r10(fAll+0.5*A),dn=r10(fAll-0.5*A);
     plan.push(`觀望為主：${fmt(dn,0)}～${fmt(up,0)} 之間不建新倉，現有部位減碼。`);
     plan.push(`條件單：收盤站上 ${fmt(up,0)} 轉區間偏多（停損 ${P(fAll)}）；跌破 ${fmt(dn,0)} 轉順勢偏空（停損 ${P(fAll)}）。`);
     const k0=strikeNear(exRows,S,true,0);
@@ -545,7 +549,7 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
       plan.push(`選擇權（${next.code}）：Flip 附近容易出現波動擴張，可考慮買 ${fmt(k0)} 跨式，以結算價估成本約 ${fmt(c,1)} 點，損平 ${fmt(k0-c,0)}／${fmt(k0+c,0)}。`);}
   }
   if(turnsNeg){const fp=fPost??S;
-    plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：若指數仍在 ${P(fPost)} 之下，區間單全部了結，改為反彈至 ${fmt(r10(fp-0.25*sd),0)}～${P(fPost)} 不過偏空，停損站上 ${fmt(r10(fp+0.25*sd),0)}。`);}
+    plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：若指數仍在 ${P(fPost)} 之下，區間單全部了結，改為反彈至 ${fmt(r10(fp-0.5*A),0)}～${P(fPost)} 不過偏空，停損站上 ${fmt(r10(fp+0.5*A),0)}。`);}
   if(turnsPos)plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：負 Gamma 部位退場，空單逢低回補，若站穩 ${P(fPost)} 改回區間思維。`);
   if(expiring)plan.push(`結算日提醒：${next.code} 剩 ${next.days.toFixed(1)} 天，結算前價格容易被 ${P(next.pin)} 吸住；最後結算價取 13:00～13:30 平均，結算日午盤不宜逆勢押注價平。`);
   plan.push(contrib);
@@ -625,7 +629,7 @@ function applySnapshot(snap,origin){
     return {code,grp:groupOf(code),exp:new Date(y,m-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
   const val=new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00");
   const keep=state.source==="auto"&&state.tradeDate===snap.tradeDate?state.included:{};
-  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep};
+  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null};
   mode="auto";$("spot").value=Math.round(+snap.F);$("valDate").value=toLocalInput(val);
   const b=$("srcBadge");b.className="src";
   b.textContent=`每日自動更新｜資料日 ${snap.tradeDate.replace(/-/g,"/")}｜台指期 ${snap.futContract||""} ${fmt(+snap.F,0)}${origin?"｜"+origin:""}`;
