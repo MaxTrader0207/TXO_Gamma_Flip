@@ -629,7 +629,33 @@
 "close": 41915.0,
 "tr": 1538.0,
 "atr5": 1499.0
+},
+{
+"date": "2026-11-06",
+"F": 39652.0,
+"naive_gex": 11.233,
+"naive_flip": null,
+"naive_flipW": null,
+"naive_gexW": 16.744,
+"naive_flipF": null,
+"naive_gexF": 3.938,
+"naive_flipM": null,
+"naive_gexM": -9.449,
+"short_gex": -58.534,
+"short_flip": null,
+"short_flipW": null,
+"short_gexW": -32.373,
+"short_flipF": null,
+"short_gexF": -8.116,
+"short_flipM": null,
+"short_gexM": -18.045,
+"open": 38888.0,
+"high": 40690.0,
+"low": 37694.0,
+"close": 39786.0,
+"tr": 4221.0,
+"atr5": 2009.4
 }
 ],
-"updatedAt": "2026-11-06T01:56:04+08:00"
+"updatedAt": "2026-11-07T00:10:30+08:00"
 }
