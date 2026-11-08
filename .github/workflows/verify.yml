@@ -1,0 +1,33 @@
+name: 核對 TXO 未平倉
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "核對日期 YYYY-MM-DD（空白＝最新資料日）"
+        default: ""
+  push:
+    paths:
+      - "scripts/verify_oi.py"
+      - ".github/workflows/verify.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pandas lxml tabulate
+      - run: python scripts/verify_oi.py ${{ github.event.inputs.date }}
+      - name: 提交核對結果
+        run: |
+          git config user.name "txo-bot"
+          git config user.email "txo-bot@users.noreply.github.com"
+          git add -A verify
+          git commit -m "verify: 未平倉核對" || exit 0
+          git pull --rebase && git push
