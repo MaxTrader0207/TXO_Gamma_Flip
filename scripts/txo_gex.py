@@ -312,12 +312,19 @@ def main():
         fcode, F = fut[d][:2]
         o, h, l, c = fut[d][2:]
         val = datetime(d.year, d.month, d.day, 13, 45, tzinfo=TPE)
-        rows = [r for r in opt[d] if date.fromisoformat(r[1]) > d and abs(r[2] - F) / F <= 0.15]
+        live = [r for r in opt[d] if date.fromisoformat(r[1]) > d]
+        # 每個到期的完整未平倉（含 ±15% 以外的履約價），供頁面顯示；Gamma 計算仍只用 ±15% 內
+        oi_tot = {}
+        for r in live:
+            t = oi_tot.setdefault(r[0], [0, 0])
+            t[0 if r[3] == "C" else 1] += r[5]
+        rows = [r for r in live if abs(r[2] - F) / F <= 0.15]
         if (d.isoformat() in items) and d != days[-1]:
             continue
         summ = summarize(rows, F, val)
         snap = {"tradeDate": d.isoformat(), "valuation": val.isoformat(), "F": F, "futContract": fcode,
                 "fields": ["code", "expiry", "strike", "cp", "settle", "oi"], "rows": rows, "summary": summ,
+                "oiTotals": oi_tot,
                 "generatedAt": datetime.now(TPE).isoformat(timespec="seconds")}
         json.dump(snap, open(os.path.join(DATA, "daily", d.strftime("%Y%m%d") + ".json"), "w", encoding="utf-8"),
                   ensure_ascii=False, separators=(",", ":"))

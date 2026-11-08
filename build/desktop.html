@@ -444,8 +444,8 @@ function render(){
     const rows=grpRows[g.key];const el=document.createElement("div");el.className="panel gcard";el.style.setProperty("--c",`var(${g.color})`);
     if(!rows.length){el.innerHTML=`<h3><span>${g.name}</span><span class="tag na">未納入</span></h3><div class="sub">目前沒有勾選此類到期。</div>`;gc.appendChild(el);continue;}
     const gg=gexAt(rows,S,r),w=walls(rows,S,r),f=flips[g.key];
-    const oi=rows.reduce((s,x)=>s+x.oi,0);
     const codesIn=[...new Set(rows.map(x=>x.code))].sort((a,b)=>byExp[a][0].exp-byExp[b][0].exp);
+    const oi=codesIn.reduce((s,c)=>{const t=oiTot(c,byExp[c]);return s+t[0]+t[1];},0);
     const expInfo=codesIn.map(c=>expiryStats(c,byExp[c],S,r));
     const adv=groupAdvice(g,{gg,w,expInfo},ctx);
     exportStore[g.key]={g,adv,next:expInfo[0]};
@@ -502,7 +502,7 @@ function render(){
     const rows=byExp[c],g=GROUPS.find(x=>x.key===rows[0].grp),exp=rows[0].exp;
     const on=state.included[c];
     const dte=(rows[0].T*365);
-    const coi=rows.filter(x=>x.isCall).reduce((s,x)=>s+x.oi,0),poi=rows.filter(x=>!x.isCall).reduce((s,x)=>s+x.oi,0);
+    const [coi,poi]=oiTot(c,rows);
     let atm=rows[0];for(const x of rows)if(Math.abs(x.K-S)<Math.abs(atm.K-S))atm=x;
     const cv=grid.map(s=>gexAt(rows,s,r));const f=findFlip(grid,cv,S);const w=walls(rows,S,r);const gg=gexAt(rows,S,r);
     const tr=document.createElement("tr");tr.style.setProperty("--c",`var(${g.color})`);if(!on)tr.className="off";
@@ -512,7 +512,7 @@ function render(){
   }
   // 合併列：只計已納入的到期，隨勾選即時變動
   const nIn=codes.filter(c=>state.included[c]).length;
-  const cAll=incRows.filter(x=>x.isCall).reduce((s,x)=>s+x.oi,0),pAll=incRows.filter(x=>!x.isCall).reduce((s,x)=>s+x.oi,0);
+  let cAll=0,pAll=0;for(const c of codes){if(!state.included[c])continue;const t=oiTot(c,byExp[c]);cAll+=t[0];pAll+=t[1];}
   $("expFoot").innerHTML=`<tr><td class="lbl"></td><td class="lbl">合併（納入 ${nIn}／${codes.length} 檔）</td><td></td><td></td><td>${fmt(cAll)}</td><td>${fmt(pAll)}</td><td></td><td style="color:var(${gNow>=0?"--pos":"--neg"})">${sgn(gNow,2)}</td><td>${fl===null?"—":fmt(fl,0)}</td><td>${W.call?fmt(W.call):"—"}</td><td>${W.put?fmt(W.put):"—"}</td></tr>`;
   const off=codes.filter(c=>!state.included[c]);
   const st=$("incStatus");
@@ -594,6 +594,11 @@ document.addEventListener("click",e=>{
     return;}
   saveFile(`TXO_GammaFlip_${tag}_${day||"data"}.${type}`,text);
 });
+
+/* 到期的完整未平倉：每日資料有 oiTotals 時用它（含 ±15% 以外的履約價），否則用已載入的履約價加總 */
+function oiTot(code,rows){const t=state.oiTotals&&state.oiTotals[code];
+  if(t)return [+t[0]||0,+t[1]||0];
+  let c=0,p=0;for(const x of rows){if(x.isCall)c+=x.oi;else p+=x.oi;}return [c,p];}
 
 /* ---------- per-group advice ---------- */
 function expiryStats(code,rows,S,r){
@@ -761,7 +766,7 @@ function applySnapshot(snap,origin){
     return {code,grp:groupOf(code),exp:new Date(y,m-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
   const val=new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00");
   const keep=state.source==="auto"&&state.tradeDate===snap.tradeDate?state.included:{};
-  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null};
+  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,oiTotals:snap.oiTotals||null};
   mode="auto";$("spot").value=Math.round(+snap.F);$("valDate").value=toLocalInput(val);
   const b=$("srcBadge");b.className="src";
   b.textContent=`每日自動更新｜資料日 ${snap.tradeDate.replace(/-/g,"/")}｜台指期 ${snap.futContract||""} ${fmt(+snap.F,0)}${origin?"｜"+origin:""}`;
