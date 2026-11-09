@@ -171,16 +171,22 @@ def main():
                "cost": COST, "model": model, "results": js},
               open(os.path.join(OUT, "strategy.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("\n".join(L))
-    # 儀表板採用的規則：綠燈日、最近到期勒式、k=2.5（回測最穩定）；附上 k=2.0 與紅燈日對照
-    def detail(k, filt):
+    # 儀表板採用的規則：綠燈日、最近到期勒式，持有到結算。分「標準 k=2.5」與「保守 k=3.0」兩級，
+    # 每級附上全期、樣本外（前半年度估模型、後半年度測試）與成本加倍的結果
+    def detail(tlist, k, filt, cost=None):
+        global COST
+        old = COST
+        if cost is not None:
+            COST = cost
         p = []
-        for t in ts:
+        for t in tlist:
             if not filt(t):
                 continue
             d = k * t["E"] * sq(t)
             a, b = leg(t, d, True), leg(t, d, False)
             if a and b:
                 p.append((a["pnl"] + b["pnl"], a["credit"] + b["credit"]))
+        COST = old
         if len(p) < 20:
             return None
         v = [x[0] for x in p]
@@ -192,14 +198,35 @@ def main():
         return {"k": k, "n": len(v), "win": round(sum(1 for x in v if x > 0) / len(v), 3), "avg": round(st.mean(v), 2),
                 "total": round(sum(v), 1), "worst": round(min(v), 1), "dd": round(dd, 1),
                 "t": round(st.mean(v) / (st.stdev(v) / math.sqrt(len(v))), 2), "credit": round(st.mean(x[1] for x in p), 1)}
+
+    green = lambda t: not t["red"]  # noqa: E731
+    mid = rows[len(rows) // 2]["date"]
+    train = [r for r in rows if r["date"] < mid]
+    reg = [r for r in train if r.get("atr5p") is not None and r.get("tr1") is not None]
+    X = [[1.0, r["atr5p"], 1.0 if tg.bt_bucket(r["F"], r.get("naive_flip"), r.get("naive_gex")) == "red" else 0.0] for r in reg]
+    b0, _ = bt.ols(X, [r["tr1"] for r in reg])
+    m_tr = {"a": b0[0], "b": b0[1], "c": b0[2]}
+    ts_oos = [t for t in trades(rows, m_tr) if t["date"] >= mid]
+    tiers = []
+    for name, k in (("標準", 2.5), ("保守", 3.0)):
+        tiers.append({"name": name, "k": k, "full": detail(ts, k, green), "oos": detail(ts_oos, k, green),
+                      "cost2": detail(ts, k, green, cost=2.0), "red": detail(ts, k, lambda t: t["red"])})
+    L2 = ["\n## 儀表板採用的規則（綠燈日、最近到期勒式、持有到結算）\n",
+          f"樣本外：用 {mid} 以前的資料估預估波幅模型，只在 {mid} 以後測試。\n",
+          "| 級別 | k | 全期 平均／t／最大回撤 | 樣本外 平均／t／最大回撤 | 成本每腳 2 點 平均／t | 紅燈日同規則 累計 | 平均收權利金 |", "|---|---|---|---|---|---|---|"]
+    for t in tiers:
+        f, o, c2, r = t["full"], t["oos"], t["cost2"], t["red"]
+        L2.append(f"| {t['name']} | {t['k']} | {f['avg']}／{f['t']}／{f['dd']} | "
+                  f"{(str(o['avg'])+'／'+str(o['t'])+'／'+str(o['dd'])) if o else '—'} | {c2['avg']}／{c2['t']} | "
+                  f"{r['total'] if r else '—'} | {f['credit']} |")
+    L2.append("\n持有期間轉紅燈就出場、或權利金漲到 3 倍停損，回測都讓結果變差（出場時要付買賣成本，且跳空來不及停），所以採持有到結算。")
+    with open(os.path.join(OUT, "strategy.md"), "a", encoding="utf-8") as fh:
+        fh.write("\n".join(L2) + "\n")
+    print("\n".join(L2))
     sp = os.path.join(OUT, "signal.json")
     sig = json.load(open(sp, encoding="utf-8"))
-    sig["_strategy"] = {"k": 2.5, "cost": COST, "from": rows[0]["date"], "to": rows[-1]["date"],
-                        "green": detail(2.5, lambda t: not t["red"]), "green2": detail(2.0, lambda t: not t["red"]),
-                        "red": detail(2.5, lambda t: t["red"])}
+    sig["_strategy"] = {"cost": COST, "from": rows[0]["date"], "to": rows[-1]["date"], "oosFrom": mid, "tiers": tiers}
     json.dump(sig, open(sp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print(sig["_strategy"])
-
 
 if __name__ == "__main__":
     main()

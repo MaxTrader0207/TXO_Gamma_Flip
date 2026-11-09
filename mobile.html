@@ -129,7 +129,7 @@ body.nodl .dl{display:none}
 .btlight.green .bt-dot{background:var(--pos);box-shadow:0 0 0 4px color-mix(in srgb,var(--pos) 22%,transparent)}
 .btlight.red .bt-head b{color:var(--neg)}.btlight.green .bt-head b{color:var(--pos)}
 .bt-why{color:var(--muted);font-size:13px}
-.bt-sell{border-top:1px dashed var(--line);padding-top:6px}.bt-sell.no b:last-of-type{color:var(--neg)}
+.bt-sell{border-top:1px dashed var(--line);padding-top:6px;display:grid;gap:4px}.bt-tiers{margin:0;padding-left:18px;display:grid;gap:4px}.bt-sell.no b:last-of-type{color:var(--neg)}
 .bt-src{color:var(--muted);font-size:12px}
 </style>
 
@@ -332,20 +332,23 @@ function tradingDaysTo(val,exp){let n=0;const d=new Date(val.getFullYear(),val.g
   while(d<exp){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6&&d<=exp)n++;}return Math.max(1,n);}
 function btSellHtml(bt,F,atr,rows,val){
   const st=bt.stats&&bt.stats._strategy,m=bt.stats&&bt.stats._model;
-  if(!st||!st.green||!m||!atr||!F||!rows||!rows.length||!val)return "";
-  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),p0=v=>Math.round(v*100)+"%",red=bt.bucket==="red";
+  if(!st||!st.tiers||!m||!atr||!F||!rows||!rows.length||!val)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),red=bt.bucket==="red";
   const live=rows.filter(x=>x.exp>val);if(!live.length)return "";
   const exp=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+exp).code;
   const ch=live.filter(x=>x.code===code&&isFinite(x.px)&&x.px>0),n=tradingDaysTo(val,exp);
-  const E=(m.a+m.b*atr/F*100+(red?m.c:0))/100*F,D=st.k*E*Math.sqrt(n);
-  const c=ch.filter(x=>x.isCall&&x.K>=F+D).sort((a,b)=>a.K-b.K)[0],p=ch.filter(x=>!x.isCall&&x.K<=F-D).sort((a,b)=>b.K-a.K)[0];
-  const g=st.green,r=st.red,ds=`${exp.getMonth()+1}/${exp.getDate()}`;
-  const legs=c&&p?`賣 Call <b>${n0(c.K)}</b>（結算價 ${f1(c.px)}）＋ 賣 Put <b>${n0(p.K)}</b>（${f1(p.px)}），合計約 ${f1(c.px+p.px)} 點`:`距離超出有報價的履約價範圍（目前波動太大），依規則<b>今天不進場</b>；回測中這類日子同樣沒有交易`;
-  const head=`<b>賣方履約價（回測規則）</b>：${code}（${ds} 結算，剩 ${n} 個交易日），距離 ${st.k} × 預估波幅 × √${n} ≈ ±${n0(D)} 點`;
-  const stat=`回測綠燈日 ${g.n} 筆：勝率 ${p0(g.win)}、平均 ${g.avg>=0?"+":""}${f1(g.avg)} 點、最大單筆 ${n0(g.worst)} 點、最大回撤 ${n0(g.dd)} 點（t≈${(+g.t).toFixed(1)}，每腳已扣 ${st.cost} 點成本）`;
-  const redTxt=r?`紅燈日同規則 ${r.n} 筆累計 ${n0(r.total)} 點、最大單筆 ${n0(r.worst)} 點`:"";
-  return red?`<p class="bt-sell no">${head}。<b>今天是紅燈，回測不做賣方</b>：${redTxt}。若一定要做，改成有保護腳的價差並減少口數。</p>`
-    :`<p class="bt-sell">${head}：${legs}。${stat}。${r?`對照：${redTxt}，所以紅燈日不進場。`:""}</p>`;
+  const E=(m.a+m.b*atr/F*100+(red?m.c:0))/100*F,ds=`${exp.getMonth()+1}/${exp.getDate()}`;
+  const head=`<b>賣方履約價（回測規則）</b>：${code}（${ds} 結算，剩 ${n} 個交易日），Call＋Put 各賣一口、持有到結算。`;
+  const statTxt=t=>{const f=t.full,o=t.oos,c=t.cost2;return `全期平均 ${f.avg>=0?"+":""}${f1(f.avg)} 點、最大回撤 ${n0(f.dd)}（t≈${f1(f.t)}）`+
+    (o?`；樣本外平均 ${o.avg>=0?"+":""}${f1(o.avg)}、回撤 ${n0(o.dd)}（t≈${f1(o.t)}）`:"")+(c?`；成本每腳 2 點時平均 ${f1(c.avg)}`:"");};
+  if(red){const r=st.tiers[0].red;
+    return `<p class="bt-sell no">${head}<b>今天是紅燈，回測不做賣方</b>${r?`：紅燈日同規則累計 ${n0(r.total)} 點、最大單筆 ${n0(r.worst)} 點`:""}。若一定要做，改成有保護腳的價差並減少口數。</p>`;}
+  const li=st.tiers.map(t=>{const D=t.k*E*Math.sqrt(n);
+    const c=ch.filter(x=>x.isCall&&x.K>=F+D).sort((a,b)=>a.K-b.K)[0],p=ch.filter(x=>!x.isCall&&x.K<=F-D).sort((a,b)=>b.K-a.K)[0];
+    const legs=c&&p?`賣 Call <b>${n0(c.K)}</b>（${f1(c.px)}）＋ 賣 Put <b>${n0(p.K)}</b>（${f1(p.px)}），合計 ${f1(c.px+p.px)} 點`
+      :`超出有報價的履約價範圍，<b>不進場</b>`;
+    return `<li><b>${t.name}</b>（${t.k} × 預估波幅 × √${n} ≈ ±${n0(D)} 點）：${legs}<br><span class="bt-src">${statTxt(t)}</span></li>`;}).join("");
+  return `<div class="bt-sell"><div>${head}</div><ul class="bt-tiers">${li}</ul><span class="bt-src">標準級收得多但樣本外不穩（曾回撤近千點）；保守級樣本外穩定，但權利金只有約 5 點，成本稍高就幾乎不賺。持有期間轉紅燈出場或 3 倍停損，回測反而更差。</span></div>`;
 }
 
 /* 燈號實績：用每日歷史（Call 多、Put 空的合併 Flip）回看每個燈號隔日的實際波動 */
