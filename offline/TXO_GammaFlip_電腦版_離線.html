@@ -169,6 +169,14 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
 .nchg{background:var(--warn);color:#fff;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
 .health{border:2px solid var(--neg);background:color-mix(in srgb,var(--neg) 10%,var(--bg));color:var(--ink);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:13px;line-height:1.6}
 .health b{color:var(--neg)}
+.summary{border:2px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--panel);display:grid;gap:6px;margin:8px 0}
+.summary.red{border-color:var(--neg)}.summary.green{border-color:var(--pos)}
+.sum-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.sum-head h2{margin:0;font-size:16px}
+.sum-list{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px;line-height:1.6}
+.sum-list li.neg b,.sum-list li.neg{color:var(--neg)}.sum-list li.pos>b:first-child{color:var(--pos)}
+.sizeform{display:flex;flex-wrap:wrap;gap:8px;align-items:end;font-size:12px}
+.sizeform label{display:grid;gap:2px}.sizeform input{width:130px;max-width:100%}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:6px;padding:3px 10px;color:var(--ink);cursor:pointer;font-size:12px}
 </style>
 
 <div class="wrap">
@@ -204,6 +212,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
     </div>
   </section>
 
+  <section id="summaryCard" class="summary" hidden></section>
   <section class="hero">
     <div id="regimeCard" class="panel regime">
       <span class="sub">合併 Gamma Flip（全部勾選到期）</span>
@@ -499,6 +508,71 @@ function healthHtml(tradeDate,night,nowMs,hc){
   return out.join("<br>");
 }
 
+/* 今日重點：把燈號、夜盤、預估波幅、各規則今天要不要做、口數，濃縮成幾行 */
+function todayPlan(bt,F,atr,rows,val,night){
+  const m=bt.stats&&bt.stats._model,S=bt.stats&&bt.stats._strategy,B=bt.stats&&bt.stats._board;
+  const live=(rows||[]).filter(x=>x.exp>val);if(!live.length||!m)return null;
+  const exp=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+exp).code,n=tradingDaysTo(val,exp);
+  const useN=night&&night.close&&night.after===(bt.tradeDate||night.after);
+  const light=useN?night.bucket:bt.bucket,red=light==="red",S0=useN?night.close:F;
+  const E=useN&&night.E!=null?night.E/100*S0:(atr?(m.a+m.b*atr/F*100+(red?m.c:0))/100*F:null);
+  const sells=((S&&S.tiers)||[]).map(t=>{
+    if(red||!E)return {name:t.name,k:t.k,ok:false,why:red?"紅燈不做":"缺 ATR"};
+    const D=t.k*E*Math.sqrt(n),ch=live.filter(x=>x.code===code&&qp(x,"sell")!=null);
+    const c=ch.filter(x=>x.isCall&&x.K>=F+D).sort((a,b)=>a.K-b.K)[0],p=ch.filter(x=>!x.isCall&&x.K<=F-D).sort((a,b)=>b.K-a.K)[0];
+    if(!c||!p)return {name:t.name,k:t.k,ok:false,why:"超出報價範圍",D};
+    const rule=(B&&B.rules||[]).find(r=>r.key===t.name);
+    return {name:t.name,k:t.k,ok:true,D,c,p,credit:qp(c,"sell")+qp(p,"sell"),dd:rule&&rule.full?Math.abs(rule.full.dd):null};});
+  const both=live.filter(x=>x.code===code&&qp(x,"buy")!=null),Ks=[...new Set(both.map(x=>x.K))].filter(K=>both.some(x=>x.K===K&&x.isCall)&&both.some(x=>x.K===K&&!x.isCall));
+  const K=Ks.length?Ks.reduce((a,k)=>Math.abs(k-F)<Math.abs(a-F)?k:a,Ks[0]):null,atmC=K!=null?both.find(x=>x.K===K&&x.isCall):null;
+  const buyCall=bt.bucket==="red"&&bt.ret!=null&&bt.ret<0&&atmC?{K,px:qp(atmC,"buy")}:null;
+  const maC=bt.ma&&bt.ma.breaks&&bt.ma.breaks.length?both.filter(x=>x.isCall&&x.K>=F*1.01).sort((a,b)=>a.K-b.K)[0]:null;
+  const skewHi=bt.vol&&bt.vol.skewPct!=null&&bt.vol.skewPct>=0.8;
+  return {code,exp,n,light,useN,E,S0,sells,buyCall,ma:maC?{K:maC.K,px:qp(maC,"buy"),lines:bt.ma.breaks}:null,skewHi,dayLight:bt.bucket};
+}
+/* 部位大小：依資金、可承受回撤、保證金上限計算口數（設定存在本機瀏覽器） */
+const SIZE_KEY="txo_size_v1";
+function sizeCfg(){try{const v=JSON.parse(localStorage.getItem(SIZE_KEY)||"null");if(v&&v.cap>0)return v;}catch(e){}return null;}
+function sizeSave(v){try{localStorage.setItem(SIZE_KEY,JSON.stringify(v));}catch(e){}}
+function lotsFor(plan,cfg,margin){
+  if(!cfg)return {};
+  const B=margin&&margin.B?margin.B[2]:94000,out={};
+  for(const s of plan.sells){if(!s.ok)continue;
+    const byDD=s.dd?Math.floor(cfg.cap*cfg.dd/100/(s.dd*50)):0;
+    const perSet=B+s.credit*50,byM=Math.floor(cfg.cap*cfg.mu/100/(perSet*Math.max(1,plan.n)));
+    let L=Math.max(0,Math.min(byDD,byM));if(plan.skewHi)L=Math.floor(L/2);
+    out[s.name]={lots:L,byDD,byM,perSet};}
+  const one=px=>px?Math.max(0,Math.floor(cfg.cap*cfg.loss/100/(px*50))):0;
+  if(plan.buyCall)out.buyCall={lots:one(plan.buyCall.px)};
+  if(plan.ma)out.ma={lots:one(plan.ma.px)};
+  return out;
+}
+function summaryHtml(plan,cfg,margin){
+  if(!plan)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),red=plan.light==="red",L=lotsFor(plan,cfg,margin);
+  const lt=k=>cfg&&L[k]!=null?`，建議 <b>${L[k].lots} 口</b>`:"";
+  const lines=[];
+  lines.push(`<li class="${red?"neg":"pos"}"><b>${red?"紅燈":"綠燈"}</b>${plan.useN?`（夜盤後${plan.dayLight!==plan.light?`，<b>由${plan.dayLight==="red"?"紅轉綠":"綠轉紅"}</b>`:"維持"}）`:"（日盤收盤）"}｜預估${plan.useN?"今天":"下一個交易日"}真實波幅 ${plan.E?`<b>±${n0(plan.E/2)}</b>（全幅約 ${n0(plan.E)} 點）`:"—"}｜最近到期 ${plan.code}，剩 ${plan.n} 個交易日</li>`);
+  for(const s of plan.sells)lines.push(`<li>賣方${s.name}（k=${s.k}）：${s.ok?`賣 <b>${n0(s.c.K)} Call</b>＋<b>${n0(s.p.K)} Put</b>（買價合計 ${f1(s.credit)} 點）${lt(s.name)}`:`<span class="muted">不進場（${s.why}）</span>`}</li>`);
+  if(plan.skewHi)lines.push(`<li class="neg">Put 偏斜在近 60 日高檔 → 賣方口數減半（已反映在建議口數）</li>`);
+  lines.push(`<li>買方：${plan.buyCall?`紅燈＋下跌 → 買 <b>${n0(plan.buyCall.K)} Call</b>（賣價 ${f1(plan.buyCall.px)}）${lt("buyCall")}，多頭市場較有效`:`<span class="muted">條件不成立</span>`}</li>`);
+  lines.push(`<li>均線跌破：${plan.ma?`跌破 ${plan.ma.lines.map(x=>x+"MA").join("、")} → 買 <b>${n0(plan.ma.K)} Call</b>（賣價 ${f1(plan.ma.px)}）${lt("ma")}`:`<span class="muted">今天沒有訊號</span>`}</li>`);
+  const cfgTxt=cfg?`資金 ${n0(cfg.cap)} 元、可承受回撤 ${cfg.dd}%、保證金最多用 ${cfg.mu}%、買方單筆最多虧 ${cfg.loss}%`:"尚未設定資金，按「部位設定」輸入後會顯示建議口數";
+  return `<div class="sum-head"><h2>今日重點</h2><button type="button" id="sizeBtn" class="ghost">部位設定</button></div><ol class="sum-list">${lines.join("")}</ol>
+<p class="paper-note">${cfgTxt}。口數＝min（資金×可承受回撤 ÷ 規則回測最大回撤，資金×保證金上限 ÷（每組保證金×同時持有組數））；每組保證金以期交所 B 值 ${n0(margin&&margin.B?margin.B[2]:94000)} 元加權利金估算${margin&&margin.updated?`（期交所 ${margin.updated} 公告）`:""}，實際以券商計算為準。</p>
+<form id="sizeForm" class="sizeform" hidden><label>資金（元）<input name="cap" type="number" min="0" step="10000" inputmode="numeric" value="${cfg?cfg.cap:""}"></label>
+<label>可承受最大回撤 %<input name="dd" type="number" min="1" max="50" step="1" value="${cfg?cfg.dd:10}"></label>
+<label>保證金最多使用 %<input name="mu" type="number" min="5" max="100" step="5" value="${cfg?cfg.mu:50}"></label>
+<label>買方單筆最多虧 %<input name="loss" type="number" min="0.1" max="10" step="0.1" value="${cfg?cfg.loss:1}"></label>
+<button type="submit" class="btn primary">儲存</button></form>`;
+}
+function wireSummary(el,rerender){
+  const b=el.querySelector("#sizeBtn"),f=el.querySelector("#sizeForm");if(!b||!f)return;
+  b.onclick=()=>{f.hidden=!f.hidden;};
+  f.onsubmit=e=>{e.preventDefault();const d=new FormData(f),v={cap:+d.get("cap")||0,dd:+d.get("dd")||10,mu:+d.get("mu")||50,loss:+d.get("loss")||1};
+    if(v.cap>0)sizeSave(v);else{try{localStorage.removeItem(SIZE_KEY);}catch(x){}}rerender();};
+}
+
 /* 夜盤更新：每天早上用夜盤收盤重新判斷燈號（日盤的選擇權結構不變），並附上夜盤回測 */
 function btNightHtml(bt,night,F){
   const N=bt.stats&&bt.stats._night;if(!N)return "";
@@ -520,7 +594,7 @@ function btNightHtml(bt,night,F){
 
 /* 賣方履約價（回測規則）：最近到期、履約價距離 = k × 預估波幅 × √持有交易日數，只在綠燈日做 */
 /* 台灣休市日（由資料管線從證交所抓取），剩餘交易日會扣掉 */
-let HOLI=new Set(),NIGHT=null,HEALTH=null;
+let HOLI=new Set(),NIGHT=null,HEALTH=null,MARGIN=null;
 const isoD=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 function tradingDaysTo(val,exp){let n=0;const d=new Date(val.getFullYear(),val.getMonth(),val.getDate());
   while(d<exp){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6&&d<=exp&&!HOLI.has(isoD(d)))n++;}return Math.max(1,n);}
@@ -668,6 +742,8 @@ const flipMarker={id:"flipMarker",afterDatasetsDraw(ch,args,opts){
 function render(){
   if(!state.rows.length)return;
   const dtxt=dealerText();$("kDealer").textContent=dtxt||"—";
+  {const el=$("summaryCard"),pl=state.source==="auto"&&state.bt?todayPlan({...state.bt,tradeDate:state.tradeDate},state.spot,state.atr,state.rows,state.val,NIGHT):null,h=summaryHtml(pl,sizeCfg(),MARGIN);
+   el.hidden=!h;el.className="summary "+(pl?pl.light:"");el.innerHTML=h;wireSummary(el,render);}
   {const el=$("healthBar"),h=state.source==="auto"?healthHtml(state.tradeDate,NIGHT,undefined,HEALTH):"";el.hidden=!h;el.innerHTML=h;}
   {const h=state.source==="auto"?paperHtml(state.paper):"",b=state.source==="auto"?boardHtml(state.bt?.stats?._board,state.paper):"";
    $("paperPanel").hidden=!(h||b);$("paperBody").innerHTML=h;$("boardBody").innerHTML=b;}
@@ -1063,7 +1139,7 @@ function applySnapshot(snap,origin){
   if(!snap||!Array.isArray(snap.rows)||!snap.rows.length)return false;
   latestSnap=snap;
   if(mode==="manual")return true;
-  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;HEALTH=snap.health||null;
+  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;HEALTH=snap.health||null;MARGIN=snap.margin||null;
   const rows=snap.rows.map(([code,exp,K,cp,px,oi,bid,ask])=>{const [y,m,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,m-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi,
       ...(hasQ?{bid:bid==null?null:+bid,ask:ask==null?null:+ask}:{})};});

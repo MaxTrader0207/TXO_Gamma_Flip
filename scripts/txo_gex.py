@@ -542,6 +542,7 @@ def main():
 
     # 加權指數現貨收盤（均線用）與台灣休市日曆（剩餘交易日用）
     holi = set()
+    margin = None
     try:
         import twse
         first = min(date.fromisoformat(k) for k in items) if items else start
@@ -551,6 +552,7 @@ def main():
             if v:
                 it["spot"] = v
         holi = twse.holidays([today.year, today.year + 1])
+        margin = twse.txo_margin()
     except Exception as e:  # noqa: BLE001
         print("證交所資料失敗：", e)
 
@@ -577,6 +579,7 @@ def main():
                             "quotes": round(sum(1 for r in rr if len(r) > 7 and (r[6] or r[7])) / len(rr), 3) if rr else 0,
                             "inst": bool(latest.get("dealerWeights")), "spot": bool(seq and seq[-1].get("spot")),
                             "atr": bool(latest.get("atr5"))}
+        latest["margin"] = margin
         latest["holidays"] = sorted(x.isoformat() for x in holi if x >= today - timedelta(days=7))
         latest["btSignal"] = attach_signal(latest, seq)
         try:

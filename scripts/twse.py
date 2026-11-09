@@ -107,3 +107,31 @@ def holidays(years):
         print("休市日曆", y, cache[str(y)])
     json.dump(cache, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
     return {date.fromisoformat(d) for v in cache.values() for d in v}
+
+
+MARGIN_URL = "https://www.taifex.com.tw/cht/5/indexMarging"
+
+
+def txo_margin():
+    """期交所臺指選擇權風險保證金 A、B 值（結算／維持／原始），抓不到時回傳 None"""
+    path = os.path.join(DATA, "margin.json")
+    cache = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else None
+    try:
+        r = requests.get(MARGIN_URL, headers=UA, timeout=30)
+        html = r.content.decode("utf-8", "replace")
+        out = {}
+        for key, label in (("A", "臺指選擇權風險保證金(A)值"), ("B", "臺指選擇權風險保證金(B)值")):
+            i = html.find(label)
+            if i < 0:
+                raise ValueError("找不到 " + label)
+            nums = re.findall(r">\s*([\d,]{4,})\s*<", html[i:i + 1500])[:3]
+            out[key] = [int(x.replace(",", "")) for x in nums]
+        m = re.search(r"更新日期[：:]\s*(\d{4}/\d{1,2}/\d{1,2})", html)
+        out["updated"] = m.group(1) if m else None
+        if len(out["A"]) == 3 and len(out["B"]) == 3:
+            json.dump(out, open(path, "w", encoding="utf-8"), ensure_ascii=False)
+            print("臺指選擇權保證金", out)
+            return out
+    except Exception as e:  # noqa: BLE001
+        print("保證金抓取失敗", e)
+    return cache
