@@ -404,7 +404,7 @@ function btMaHtml(bt,F,rows,val){
   }
   return `<div class="bt-sell bt-ma"><div><b>均線跌破（回測）</b>：${state}。</div>
 ${act?`<ul class="bt-tiers">${act}</ul>`:`<span>今天沒有「近期第一次跌破、且均線上揚」的訊號。</span>`}
-<span class="bt-src">回測 ${M.from}～${M.to}（任一均線、跌破前連續 ${M.N} 日站上、均線高於 ${M.slope} 日前）：買當週價外 1% Call 持有到結算 ${st(M.call)}；同樣條件買 Put ${st(M.put)}；隔日就出場 ${st(M.callNext)}；對照每天都買價外 1% Call ${st(M.baseCall)}。依燈號分：紅燈 ${st(sr)}，綠燈 ${st(sg)}。樣本很少、期間又是大多頭，結果偏向「多頭回測均線買反彈」，請當參考。</span></div>`;
+<span class="bt-src">回測 ${M.from}～${M.to}（任一均線、跌破前連續 ${M.N} 日站上、今天均線高於${M.slope===1?"昨天":` ${M.slope} 日前`}）：買當週價外 1% Call 持有到結算 ${st(M.call)}；同樣條件買 Put ${st(M.put)}；隔日就出場 ${st(M.callNext)}；對照每天都買價外 1% Call ${st(M.baseCall)}。依燈號分：紅燈 ${st(sr)}，綠燈 ${st(sg)}。樣本很少、期間又是大多頭，結果偏向「多頭回測均線買反彈」，請當參考。</span></div>`;
 }
 
 /* 模擬帳本：管線每天依回測規則記錄的賣方部位（到期後以最後結算價算損益） */

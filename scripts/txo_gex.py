@@ -361,7 +361,7 @@ def gex_pct(values, v):
 MA_LIST = (30, 60, 100)
 
 
-def ma_status(closes, N=10, slope=5):
+def ma_status(closes, N=10, slope=1):
     """收盤相對 30／60／100 日均線的狀態；breaks＝今天「近期第一次跌破、且均線上揚」的均線（與 scripts/ma_bt.py 相同定義）"""
     C = [c for c in closes if c]
     if len(C) != len(closes) or len(C) < 2:

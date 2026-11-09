@@ -3,7 +3,7 @@
 收盤以結算價買進當週（最近到期）週選價外 1% 的選擇權。Put（順勢看跌破）與 Call（均線支撐反彈）都測。
 - 跌破：今天收盤 < 均線，昨天收盤 ≥ 均線
 - 近期第一次：跌破前連續 N 個交易日都收在均線之上（預設 N=10，另測 5、20）
-- 均線上揚：今天的均線 > 5 個交易日前的均線
+- 均線上揚：今天的均線 > 昨天的均線
 - 出場：持有到結算、隔日出場（以隔天結算價賣出）
 每腳每次進出扣 1 點成本。輸出 backtest/ma.md、backtest/ma.json。
 """
@@ -82,7 +82,7 @@ def main():
     for r in rows:
         r["red"] = tg.bt_bucket(r["F"], r.get("naive_flip"), r.get("naive_gex")) == "red"
 
-    def events(ma, N, slope=5):
+    def events(ma, N, slope=1):
         out = []
         for i in range(len(rows)):
             m, m1 = sma(C, ma, i), sma(C, ma, i - 1)
@@ -147,7 +147,7 @@ def main():
     ezh = {"hold": "持有到結算", "next": "隔日出場"}
     L = ["# 均線跌破買方回測（當週週選價外 1%）\n",
          f"期間 {rows[0]['date']} ～ {rows[-1]['date']}（100MA 需 100 日暖機，實際可用期間較短）。台指期近月收盤計算均線；",
-         "跌破＝今天收盤 < 均線且昨天 ≥ 均線；近期第一次＝跌破前連續 N 日收在均線之上；均線上揚＝均線高於 5 日前。",
+         "跌破＝今天收盤 < 均線且昨天 ≥ 均線；近期第一次＝跌破前連續 N 日收在均線之上；均線上揚＝今天均線高於昨天。",
          "跌破當天收盤以結算價買進最近到期週選、履約價在現價 ±1% 之外最近的一檔；每腳每次進出扣 1 點。損益單位：點。\n",
          "| 均線 | N | 買 | 出場 | 次數 | 勝率 | 平均 | 累計 | 最大獲利 | 最大虧損 | t | roi | 平均權利金 |",
          "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -169,7 +169,7 @@ def main():
     pick = lambda side, exit_: next((x for x in res if x["ma"] == "任一" and x["N"] == 10 and x["side"] == side and x["exit"] == exit_), None)  # noqa: E731
     sp = os.path.join(OUT, "signal.json")
     sig = json.load(open(sp, encoding="utf-8"))
-    sig["_ma"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "N": 10, "slope": 5, "otm": 0.01, "cost": COST,
+    sig["_ma"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "N": 10, "slope": 1, "otm": 0.01, "cost": COST,
                   "call": pick("Call", "hold"), "put": pick("Put", "hold"), "callNext": pick("Call", "next"),
                   "baseCall": base[("Call", "hold")], "split": split}
     json.dump(sig, open(sp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
