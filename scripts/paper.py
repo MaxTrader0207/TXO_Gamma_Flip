@@ -41,7 +41,8 @@ def update(days, opt, fut, items, tg, model, tiers):
         allr = opt[d]
         # 1) 結算今天到期的部位
         for e in led["entries"]:
-            if e.get("status") == "open" and e["exp"] == ds:
+            # 到期日遇休市（颱風假等）會順延，所以以「今天的資料裡這個契約到期」為準
+            if e.get("status") == "open" and e["exp"] <= ds and any(r[0] == e["code"] and r[1] == ds for r in allr):
                 S = final_settle(allr, e["code"], F)
                 if S is None:
                     continue
@@ -76,7 +77,7 @@ def update(days, opt, fut, items, tg, model, tiers):
                                    "credit": round(pc + pp, 1)})
         have |= {(ds, t["name"]) for t in tiers}
     led["entries"].sort(key=lambda e: (e["date"], e["tier"]))
-    led["start"] = led["start"] or (led["entries"][0]["date"] if led["entries"] else None)
+    led["start"] = led["entries"][0]["date"] if led["entries"] else None
     json.dump(led, open(PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
     return summary(led, tiers)
 
