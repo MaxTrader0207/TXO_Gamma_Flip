@@ -151,6 +151,12 @@ table.mini th{color:var(--muted);font-weight:500}
 .bstat.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
 .bstat.mid{background:var(--chip);color:var(--muted)}
 .board td:first-child{white-space:normal;min-width:180px}
+.bt-night{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:4px;background:var(--bg)}
+.bt-night p{margin:0}
+.bt-night.red .bt-dot{background:var(--neg)}.bt-night.green .bt-dot{background:var(--pos)}
+.bt-night.red .bt-head b{color:var(--neg)}.bt-night.green .bt-head b{color:var(--pos)}
+.bt-night.changed{border-width:2px;border-color:var(--warn)}
+.nchg{background:var(--warn);color:#fff;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
 </style>
 
 <header class="bar">
@@ -435,7 +441,7 @@ function schedule(){$("status").textContent="重新計算中…";requestAnimatio
 /* ---------- data ---------- */
 function applySnapshot(snap){
   if(!snap||!Array.isArray(snap.rows)||!snap.rows.length)return false;
-  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);
+  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;
   const rows=snap.rows.map(([code,exp,K,cp,px,oi,bid,ask])=>{const [y,mo,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi,
       ...(hasQ?{bid:bid==null?null:+bid,ask:ask==null?null:+ask}:{})};});

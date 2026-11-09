@@ -151,6 +151,12 @@ table.mini th{color:var(--muted);font-weight:500}
 .bstat.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
 .bstat.mid{background:var(--chip);color:var(--muted)}
 .board td:first-child{white-space:normal;min-width:180px}
+.bt-night{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:4px;background:var(--bg)}
+.bt-night p{margin:0}
+.bt-night.red .bt-dot{background:var(--neg)}.bt-night.green .bt-dot{background:var(--pos)}
+.bt-night.red .bt-head b{color:var(--neg)}.bt-night.green .bt-head b{color:var(--pos)}
+.bt-night.changed{border-width:2px;border-color:var(--warn)}
+.nchg{background:var(--warn);color:#fff;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
 </style>
 
 <header class="bar">
@@ -347,15 +353,34 @@ function btHtml(bt,F,atr,rows,val){
   const tip=red?"實際波動常高於隱含波動：避免裸賣選擇權，賣方改用有保護的價差並縮小口數；停損要放寬或改用選擇權限定風險。"
     :hot?"雖在 Flip 之上，但近期波動還沒退，預估波幅明顯高於平均：賣方先降口數、履約價放遠，等 ATR 回落再加碼。"
     :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
-  return `<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
+  return `${btNightHtml(bt,NIGHT,F)}<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
 <p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
 ${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt,F,rows,val)}${btMaHtml(bt,F,rows,val)}
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
 }
 
+/* 夜盤更新：每天早上用夜盤收盤重新判斷燈號（日盤的選擇權結構不變），並附上夜盤回測 */
+function btNightHtml(bt,night,F){
+  const N=bt.stats&&bt.stats._night;if(!N)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f2=v=>(+v).toFixed(2),p0=v=>Math.round(v*100)+"%";
+  const G=N.groups||{},key=(d,n)=>d==="green"?(n==="green"?"日盤綠→夜盤綠":"日盤綠→夜盤紅（夜盤跌破 Flip）"):(n==="green"?"日盤紅→夜盤綠（夜盤站回 Flip）":"日盤紅→夜盤紅");
+  const gs=g=>g?`回測同組 ${g.n} 天：隔天日盤真實波幅 ${f2(g.tr)}%、日盤漲跌 ≥1.5% 機率 ${p0(g.big)}`:"";
+  const m=N.model||{};
+  const src=`夜盤回測 ${N.from}～${N.to}：同時放進日盤與夜盤燈號，夜盤紅燈對隔天日盤波幅的影響（+${f2(m.c_night||0)}%，t≈${(+m.t_night||0).toFixed(1)}）比日盤紅燈（+${f2(m.c_day||0)}%，t≈${(+m.t_day||0).toFixed(1)}）更明顯。`;
+  if(!night||!night.close){
+    return `<div class="bt-night"><div><b>夜盤更新</b>：每天早上 07:20、07:50 依夜盤收盤重新判斷燈號，目前還沒有這個交易日之後的夜盤資料。</div><span class="bt-src">${src}</span></div>`;}
+  const red=night.bucket==="red",chg=night.dayBucket&&night.dayBucket!==night.bucket;
+  const pos=night.flip?`${night.close<night.flip?"低於":"高於"}合併 Flip ${n0(night.flip)}`:`掃描範圍內沒有 Flip，夜盤價位的總 GEX ${night.gex>=0?"為正":"為負"}`;
+  const est=night.E!=null?`今天日盤預估真實波幅 <b>${f2(night.E)}%</b>（約 <b>${n0(night.E/100*night.close)} 點</b>）。`:"";
+  const t=night.updatedAt?night.updatedAt.slice(5,16).replace("T"," "):"";
+  return `<div class="bt-night ${red?"red":"green"}${chg?" changed":""}"><div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>夜盤燈號：${red?"紅燈":"綠燈"}</b>${chg?`<span class="nchg">${night.dayBucket==="green"?"由綠轉紅":"由紅轉綠"}</span>`:`<span class="bt-why">與日盤相同</span>`}</div>
+<p>夜盤收 <b>${n0(night.close)}</b>（較日盤收盤 ${night.chg>=0?"+":""}${n0(night.chg)} 點、${night.chgPct>=0?"+":""}${f2(night.chgPct)}%，高 ${n0(night.high)}／低 ${n0(night.low)}），${pos}。${est}</p>
+<p class="bt-src">${gs(G[key(night.dayBucket||bt.bucket,night.bucket)])}。${chg?"燈號在夜盤改變時，以夜盤燈號為準調整今天的部位；":""}選擇權結構仍是前一日盤的資料，日盤收盤後會重算。更新時間 ${t}。${src}</p></div>`;
+}
+
 /* 賣方履約價（回測規則）：最近到期、履約價距離 = k × 預估波幅 × √持有交易日數，只在綠燈日做 */
 /* 台灣休市日（由資料管線從證交所抓取），剩餘交易日會扣掉 */
-let HOLI=new Set();
+let HOLI=new Set(),NIGHT=null;
 const isoD=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 function tradingDaysTo(val,exp){let n=0;const d=new Date(val.getFullYear(),val.getMonth(),val.getDate());
   while(d<exp){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6&&d<=exp&&!HOLI.has(isoD(d)))n++;}return Math.max(1,n);}
@@ -767,7 +792,7 @@ function schedule(){$("status").textContent="重新計算中…";requestAnimatio
 /* ---------- data ---------- */
 function applySnapshot(snap){
   if(!snap||!Array.isArray(snap.rows)||!snap.rows.length)return false;
-  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);
+  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;
   const rows=snap.rows.map(([code,exp,K,cp,px,oi,bid,ask])=>{const [y,mo,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi,
       ...(hasQ?{bid:bid==null?null:+bid,ask:ask==null?null:+ask}:{})};});
