@@ -22,6 +22,7 @@ import requests
 TPE = timezone(timedelta(hours=8))
 OPT_URL = "https://www.taifex.com.tw/cht/3/optDataDown"
 FUT_URL = "https://www.taifex.com.tw/cht/3/futDataDown"
+INST_URL = "https://www.taifex.com.tw/cht/3/callsAndPutsDateDown"
 MULT, TX_MULT, RATE = 50, 200, 0.015
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 DEBUG = []
@@ -33,6 +34,7 @@ def download(url, commodity, start, end):
     form = {
         "down_type": "1",
         "commodity_id": commodity,
+        "commodityId": commodity,
         "commodity_id2": "",
         "queryStartDate": start.strftime("%Y/%m/%d"),
         "queryEndDate": end.strftime("%Y/%m/%d"),
@@ -46,7 +48,7 @@ def download(url, commodity, start, end):
             for enc in ("big5", "cp950", "utf-8-sig"):
                 try:
                     txt = raw.decode(enc)
-                    if "履約價" in txt or "到期月份" in txt:
+                    if "履約價" in txt or "到期月份" in txt or "身份別" in txt:
                         return txt
                 except UnicodeDecodeError:
                     continue
@@ -100,6 +102,35 @@ def num(s):
 def ymd(s):
     d = re.sub(r"\D", "", s or "")
     return date(int(d[:4]), int(d[4:6]), int(d[6:8])) if len(d) == 8 else None
+
+
+def parse_institutional(txt):
+    """三大法人選擇權買賣權分計（TXO）：回傳 {date: {"自營商": {"C": {...}, "P": {...}}, "外資": ..., "投信": ...}}"""
+    rows = list(csv.reader(io.StringIO(txt)))
+    hi = next((i for i, r in enumerate(rows) if any("身份別" in c for c in r)), None)
+    if hi is None:
+        return {}
+    head = [c.strip() for c in rows[hi]]
+    c = dict(d=col(head, "日期"), prod=col(head, "商品"), cp=col(head, "買賣權"), who=col(head, "身份別"),
+             lo=col(head, "買方未平倉口數"), so=col(head, "賣方未平倉口數"), no=col(head, "未平倉口數買賣淨額"))
+    if min(c["d"], c["cp"], c["who"], c["lo"], c["so"]) < 0:
+        DEBUG.append("三大法人欄位無法辨識：" + "|".join(head))
+        return {}
+    out = {}
+    for r in rows[hi + 1:]:
+        if len(r) < len(head) - 2:
+            continue
+        r = [x.strip() for x in r]
+        if c["prod"] >= 0 and r[c["prod"]] and not re.search(r"臺指|台指|TXO", r[c["prod"]]):
+            continue
+        d = ymd(r[c["d"]])
+        if not d:
+            continue
+        side = "C" if "買" in r[c["cp"]] else "P"
+        who = r[c["who"]]
+        lo, so = num(r[c["lo"]]), num(r[c["so"]])
+        out.setdefault(d, {}).setdefault(who, {})[side] = {"long": lo, "short": so, "net": lo - so}
+    return out
 
 
 # ---------------- dates ----------------
@@ -241,19 +272,23 @@ def enrich(rows, F, val, fallback=0.18):
     return out
 
 
-def gex(contracts, S, mode):
+def gex(contracts, S, mode, w=None):
+    """mode: naive（Call 多 Put 空）、short（全部空方）、dealer（自營商實際淨部位比例，w=(wc, wp)）"""
     g = 0.0
     for _, _, K, call, T, iv, oi in contracts:
-        sign = -1 if mode == "short" else (1 if call else -1)
+        if mode == "dealer":
+            sign = w[0] if call else w[1]
+        else:
+            sign = -1 if mode == "short" else (1 if call else -1)
         g += sign * gamma(S, K, T, iv) * oi * MULT * S * S * 0.01
     return g / 1e8
 
 
-def flip(contracts, F, mode, pct=0.08, n=400):
+def flip(contracts, F, mode, pct=0.08, n=400, w=None):
     if not contracts:
         return None
     grid = [F * (1 - pct + 2 * pct * i / n) for i in range(n + 1)]
-    vals = [gex(contracts, s, mode) for s in grid]
+    vals = [gex(contracts, s, mode, w) for s in grid]
     best = None
     for i in range(1, len(grid)):
         a, b = vals[i - 1], vals[i]
@@ -264,17 +299,33 @@ def flip(contracts, F, mode, pct=0.08, n=400):
     return round(best, 1) if best else None
 
 
-def summarize(rows, F, val):
+def summarize(rows, F, val, w=None):
     cs = enrich(rows, F, val)
     out = {}
-    for mode in ("naive", "short"):
-        m = {"gex": round(gex(cs, F, mode), 3), "flip": flip(cs, F, mode)}
+    for mode in ("naive", "short", "dealer"):
+        if mode == "dealer" and not w:
+            continue
+        m = {"gex": round(gex(cs, F, mode, w), 3), "flip": flip(cs, F, mode, w=w)}
         for g in "WFM":
             sub = [c for c in cs if c[1] == g]
-            m[f"flip{g}"] = flip(sub, F, mode)
-            m[f"gex{g}"] = round(gex(sub, F, mode), 3) if sub else None
+            m[f"flip{g}"] = flip(sub, F, mode, w=w)
+            m[f"gex{g}"] = round(gex(sub, F, mode, w), 3) if sub else None
         out[mode] = m
     return out
+
+
+def dealer_weights(inst_day, oi_tot):
+    """自營商 Call／Put 淨未平倉 ÷ 全市場未平倉 → 每口的方向權重（-1～+1）"""
+    dl = (inst_day or {}).get("自營商")
+    if not dl or "C" not in dl or "P" not in dl:
+        return None
+    tc = sum(v[0] for v in oi_tot.values())
+    tp = sum(v[1] for v in oi_tot.values())
+    if tc <= 0 or tp <= 0:
+        return None
+    wc = max(-1.0, min(1.0, dl["C"]["net"] / tc))
+    wp = max(-1.0, min(1.0, dl["P"]["net"] / tp))
+    return round(wc, 4), round(wp, 4)
 
 
 # ---------------- main ----------------
@@ -289,6 +340,12 @@ def main():
         opt.update(parse_options(txt))
     for txt in download_range(FUT_URL, "TX", start, today):
         fut.update(parse_futures(txt))
+    inst = {}
+    for txt in download_range(INST_URL, "TXO", start, today):
+        inst.update(parse_institutional(txt))
+    print("三大法人資料天數", len(inst))
+    if not inst:
+        print("三大法人除錯：", [x for x in DEBUG if "callsAndPuts" in x or "身份別" in x][-3:])
     days = sorted(d for d in opt if d in fut)
     if not days:
         print("沒有可用的交易日資料（假日或期交所尚未公布）")
@@ -319,20 +376,26 @@ def main():
             t = oi_tot.setdefault(r[0], [0, 0])
             t[0 if r[3] == "C" else 1] += r[5]
         rows = [r for r in live if abs(r[2] - F) / F <= 0.15]
-        if (d.isoformat() in items) and d != days[-1]:
+        old = items.get(d.isoformat())
+        if old and d != days[-1] and ("dealer_flip" in old or d not in inst):
             continue
-        summ = summarize(rows, F, val)
+        w = dealer_weights(inst.get(d), oi_tot)
+        summ = summarize(rows, F, val, w)
+        inst_out = {who: v for who, v in (inst.get(d) or {}).items()}
         snap = {"tradeDate": d.isoformat(), "valuation": val.isoformat(), "F": F, "futContract": fcode,
                 "fields": ["code", "expiry", "strike", "cp", "settle", "oi"], "rows": rows, "summary": summ,
-                "oiTotals": oi_tot,
+                "oiTotals": oi_tot, "institutional": inst_out,
+                "dealerWeights": list(w) if w else None,
                 "generatedAt": datetime.now(TPE).isoformat(timespec="seconds")}
         json.dump(snap, open(os.path.join(DATA, "daily", d.strftime("%Y%m%d") + ".json"), "w", encoding="utf-8"),
                   ensure_ascii=False, separators=(",", ":"))
         items[d.isoformat()] = {"date": d.isoformat(), "F": F, **{f"{m}_{k}": v for m, s in summ.items() for k, v in s.items()}}
+        if w:
+            items[d.isoformat()].update({"dealer_wc": w[0], "dealer_wp": w[1]})
         if all(x > 0 for x in (h, l, c)):
             items[d.isoformat()].update({"open": o, "high": h, "low": l, "close": c})
         latest = snap
-        print(d, "F", F, "flip", summ["naive"]["flip"], "rows", len(rows))
+        print(d, "F", F, "flip", summ["naive"]["flip"], "dealer", w, summ.get("dealer", {}).get("flip"), "rows", len(rows))
 
     # 近 5 日 ATR（True Range = max(H-L, |H-前收|, |L-前收|)）
     seq = sorted(items.values(), key=lambda x: x["date"])
