@@ -337,6 +337,41 @@ def dealer_weights(inst_day, oi_tot):
     return round(wc, 4), round(wp, 4)
 
 
+# ---------------- 回測燈號 ----------------
+BT_WINDOW = 60
+BT_LABELS = {"red": "紅燈｜Flip 之下（負 Gamma）", "green": "綠燈｜Flip 之上（正 Gamma）"}
+
+
+def bt_bucket(F, flip, gex_v):
+    """與 scripts/backtest.py 共用：以「Call 多、Put 空」的合併 Flip 判斷。
+    483 日回測顯示 Flip 之上不論距離遠近、GEX 百分位高低，隔日波動都差不多，所以只分兩級。"""
+    if flip:
+        return "red" if F < flip else "green"
+    return "red" if (gex_v is not None and gex_v < 0) else "green"
+
+
+def gex_pct(values, v):
+    win = [x for x in values[-BT_WINDOW:] if x is not None]
+    if v is None or len(win) < 40:
+        return None
+    return sum(1 for x in win if x <= v) / len(win)
+
+
+def attach_signal(latest, seq):
+    """latest：當日快照；seq：依日期排序的歷史 items（含當日）。回傳 btSignal 物件"""
+    path = os.path.join(os.path.dirname(__file__), "..", "backtest", "signal.json")
+    if not os.path.exists(path):
+        return None
+    table = json.load(open(path, encoding="utf-8"))
+    d = latest["tradeDate"]
+    vals = [it.get("naive_gex") for it in seq if it["date"] <= d]
+    s = latest["summary"]["naive"]
+    pct = gex_pct(vals, s["gex"])
+    b = bt_bucket(latest["F"], s["flip"], s["gex"])
+    return {"bucket": b, "label": BT_LABELS[b], "flip": s["flip"], "gex": s["gex"],
+            "pct": round(pct, 3) if pct is not None else None, "stats": table}
+
+
 # ---------------- main ----------------
 def main():
     ap = argparse.ArgumentParser()
@@ -424,6 +459,7 @@ def main():
         it = items.get(latest["tradeDate"], {})
         latest["atr5"] = it.get("atr5")
         latest["ohlc"] = [it.get(k) for k in ("open", "high", "low", "close")]
+        latest["btSignal"] = attach_signal(latest, seq)
         json.dump(latest, open(os.path.join(DATA, "latest.json"), "w", encoding="utf-8"),
                   ensure_ascii=False, separators=(",", ":"))
     hist["items"] = sorted(items.values(), key=lambda x: x["date"])[-250:]

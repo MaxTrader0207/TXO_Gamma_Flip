@@ -119,6 +119,17 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:
 .copybox{width:100%;min-height:180px;font-family:var(--f-mono);font-size:12px;box-sizing:border-box;margin-top:10px}
 body.nodl .dl{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.btlight{border-left:4px solid var(--line);padding:10px 12px;border-radius:8px;background:color-mix(in srgb,var(--line) 22%,transparent);display:grid;gap:6px;font-size:13px;line-height:1.6}
+.btlight p{margin:0}
+.btlight.red{border-left-color:var(--neg);background:color-mix(in srgb,var(--neg) 9%,transparent)}
+.btlight.green{border-left-color:var(--pos);background:color-mix(in srgb,var(--pos) 9%,transparent)}
+.bt-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:15px}
+.bt-dot{width:12px;height:12px;border-radius:50%;background:var(--muted);flex:none}
+.btlight.red .bt-dot{background:var(--neg);box-shadow:0 0 0 4px color-mix(in srgb,var(--neg) 22%,transparent)}
+.btlight.green .bt-dot{background:var(--pos);box-shadow:0 0 0 4px color-mix(in srgb,var(--pos) 22%,transparent)}
+.btlight.red .bt-head b{color:var(--neg)}.btlight.green .bt-head b{color:var(--pos)}
+.bt-why{color:var(--muted);font-size:13px}
+.bt-src{color:var(--muted);font-size:12px}
 </style>
 
 <header class="bar">
@@ -141,6 +152,7 @@ body.nodl .dl{display:none}
       <div class="stat"><div class="k">近 5 日 ATR</div><div id="hAtr" class="v">—</div></div>
     </div>
     <p id="hRead" class="read"></p>
+    <div id="btLight" class="btlight" hidden></div>
     <p id="hDealer" class="note"></p>
   </section>
 
@@ -295,6 +307,25 @@ function walls(rows,S,r){
   return {byStrike:by,call:cw!==null&&cg[cw]>0?+cw:null,put:pw!==null&&pg[pw]>0?+pw:null};
 }
 
+/* 回測燈號：以每日收盤資料、「Call 多、Put 空」、全部到期計算（與 scripts/backtest.py 同一套定義），不隨頁面上的勾選與方向切換改變 */
+function btHtml(bt,F,atr){
+  if(!bt||!bt.stats||!bt.stats[bt.bucket])return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),p1=v=>(v*100).toFixed(0)+"%",f2=v=>(+v).toFixed(2);
+  const s=bt.stats[bt.bucket],m=bt.stats._model,meta=bt.stats._meta||{},red=bt.bucket==="red";
+  const why=bt.flip?(red?`收盤 ${n0(F)} 在 Flip ${n0(bt.flip)} 之下`:`收盤 ${n0(F)} 在 Flip ${n0(bt.flip)} 之上`)
+    :(red?"±8% 內找不到 Flip，且總 GEX 為負":"±8% 內找不到 Flip，總 GEX 為正");
+  let est="",hot=false;
+  if(m&&atr&&F){const ap=atr/F*100,e=m.a+m.b*ap+(red?m.c:0);hot=e>=1.5*(meta.tr1||2);
+    est=`<p class="bt-est">預估明日真實波幅 <b>${f2(e)}%</b>（約 <b>${n0(e/100*F)} 點</b>）＝ 基準 ${f2(m.a)}% ＋ 近 5 日 ATR ${f2(ap)}% × ${f2(m.b)}${red?` ＋ 紅燈加成 ${f2(m.c)}%`:""}</p>`;}
+  const tip=red?"實際波動常高於隱含波動：避免裸賣選擇權，賣方改用有保護的價差並縮小口數；停損要放寬或改用選擇權限定風險。"
+    :hot?"雖在 Flip 之上，但近期波動還沒退，預估波幅明顯高於平均：賣方先降口數、履約價放遠，等 ATR 回落再加碼。"
+    :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
+  return `<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
+<p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
+${est}<p class="bt-tip">${tip}</p>
+<p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
+}
+
 
 /* ---------- per-group advice ---------- */
 function expiryStats(code,rows,S,r){
@@ -427,6 +458,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
+  {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
   {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
    $("hDealer").textContent=d&&w?`自營商淨部位：Call ${f(d.C?.net)} 口（${pc(w[0])}）／Put ${f(d.P?.net)} 口（${pc(w[1])}）${$("signMode").value==="dealer"?"，已用來校正方向":""}`:"";}
@@ -571,7 +603,7 @@ function applySnapshot(snap){
   const rows=snap.rows.map(([code,exp,K,cp,px,oi])=>{const [y,mo,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
   const keep=state.tradeDate===snap.tradeDate?state.included:{};
-  state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,dw:snap.dealerWeights||null,inst:snap.institutional||null};
+  state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,dw:snap.dealerWeights||null,inst:snap.institutional||null,bt:snap.btSignal||null};
   render();return true;
 }
 async function load(){

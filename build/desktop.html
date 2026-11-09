@@ -120,6 +120,17 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
 .msg{font-size:13px;color:var(--neg)}
 @media (max-width:820px){.hero{grid-template-columns:1fr}.groups{grid-template-columns:1fr}.chartbox{height:280px}.chartbox.tall{height:300px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.btlight{border-left:4px solid var(--line);padding:10px 12px;border-radius:8px;background:color-mix(in srgb,var(--line) 22%,transparent);display:grid;gap:6px;font-size:13px;line-height:1.6}
+.btlight p{margin:0}
+.btlight.red{border-left-color:var(--neg);background:color-mix(in srgb,var(--neg) 9%,transparent)}
+.btlight.green{border-left-color:var(--pos);background:color-mix(in srgb,var(--pos) 9%,transparent)}
+.bt-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:15px}
+.bt-dot{width:12px;height:12px;border-radius:50%;background:var(--muted);flex:none}
+.btlight.red .bt-dot{background:var(--neg);box-shadow:0 0 0 4px color-mix(in srgb,var(--neg) 22%,transparent)}
+.btlight.green .bt-dot{background:var(--pos);box-shadow:0 0 0 4px color-mix(in srgb,var(--pos) 22%,transparent)}
+.btlight.red .bt-head b{color:var(--neg)}.btlight.green .bt-head b{color:var(--pos)}
+.bt-why{color:var(--muted);font-size:13px}
+.bt-src{color:var(--muted);font-size:12px}
 </style>
 
 <div class="wrap">
@@ -169,6 +180,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <dt>自營商淨部位</dt><dd id="kDealer">—</dd>
       </dl>
       <p id="readout" class="read"></p>
+      <div id="btLight" class="btlight" hidden></div>
     </div>
     <div class="panel">
       <div class="head">
@@ -235,6 +247,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>欄位會自動比對：契約、到期月份(週別)、契約到期日（若無則依代碼推算：<code>YYYYMM</code>＝第三個週三、<code>Wn</code>＝第 n 個週三、<code>Fn</code>＝第 n 個週五）、履約價、買賣權、結算價、未沖銷契約數。</li>
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
+        <li>回測燈號：依當日收盤是否在「Call 多、Put 空」合併 Flip 之下分紅／綠兩級（找不到 Flip 時看總 GEX 正負）。回測發現 Flip 之上不論距離遠近、GEX 百分位高低，隔日波動差異都不大，所以不另設黃燈。預估明日波幅來自回測的迴歸：隔日真實波幅% ＝ 基準 ＋ 係數 × 近 5 日 ATR% ＋ 紅燈加成，每次重跑回測會自動更新係數。</li>
         <li>方向假設預設採「Call 多、Put 空」。2024/11～2026/11 共 483 個交易日的回測：期貨收在此假設的 Flip 之下時，隔日真實波幅平均 2.43%、漲跌 ≥1.5% 的機率 37%；在 Flip 之上時為 1.78%、24%。扣除「近 5 日 ATR」本身的波動延續效果後，Flip 之下仍多出約 0.7 個百分點（t≈3.4），是統計上站得住的訊號。「自營商實際淨部位」以期交所三大法人的自營商 Call、Put 淨未平倉比例當方向權重，但它約 8 成的日子算不出 Flip，扣除 ATR 效果後也沒有額外預測力，所以保留作參考對照。完整回測在 repo 的 backtest/ 資料夾。</li>
         <li>Flip：固定 OI 與各履約價 IV，在 ±掃描範圍內 400 個價位重新計算 Γ，取總 GEX 穿越 0 且最接近現價的位置（線性內插）。</li>
         <li>結算日當天剩餘時間極短，價平 Gamma 會劇烈放大，Flip 可能在履約價之間跳動，請與其他到期一起判讀。</li>
@@ -388,6 +401,25 @@ function walls(rows,S,r){
   return {byStrike:by,call:cw!==null&&cg[cw]>0?+cw:null,put:pw!==null&&pg[pw]>0?+pw:null};
 }
 
+/* 回測燈號：以每日收盤資料、「Call 多、Put 空」、全部到期計算（與 scripts/backtest.py 同一套定義），不隨頁面上的勾選與方向切換改變 */
+function btHtml(bt,F,atr){
+  if(!bt||!bt.stats||!bt.stats[bt.bucket])return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),p1=v=>(v*100).toFixed(0)+"%",f2=v=>(+v).toFixed(2);
+  const s=bt.stats[bt.bucket],m=bt.stats._model,meta=bt.stats._meta||{},red=bt.bucket==="red";
+  const why=bt.flip?(red?`收盤 ${n0(F)} 在 Flip ${n0(bt.flip)} 之下`:`收盤 ${n0(F)} 在 Flip ${n0(bt.flip)} 之上`)
+    :(red?"±8% 內找不到 Flip，且總 GEX 為負":"±8% 內找不到 Flip，總 GEX 為正");
+  let est="",hot=false;
+  if(m&&atr&&F){const ap=atr/F*100,e=m.a+m.b*ap+(red?m.c:0);hot=e>=1.5*(meta.tr1||2);
+    est=`<p class="bt-est">預估明日真實波幅 <b>${f2(e)}%</b>（約 <b>${n0(e/100*F)} 點</b>）＝ 基準 ${f2(m.a)}% ＋ 近 5 日 ATR ${f2(ap)}% × ${f2(m.b)}${red?` ＋ 紅燈加成 ${f2(m.c)}%`:""}</p>`;}
+  const tip=red?"實際波動常高於隱含波動：避免裸賣選擇權，賣方改用有保護的價差並縮小口數；停損要放寬或改用選擇權限定風險。"
+    :hot?"雖在 Flip 之上，但近期波動還沒退，預估波幅明顯高於平均：賣方先降口數、履約價放遠，等 ATR 回落再加碼。"
+    :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
+  return `<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
+<p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
+${est}<p class="bt-tip">${tip}</p>
+<p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
+}
+
 /* ---------- render ---------- */
 let profileChart,strikeChart;
 const fmt=(v,d=0)=>v===null||v===undefined||!isFinite(v)?"—":v.toLocaleString("zh-TW",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -404,6 +436,7 @@ const flipMarker={id:"flipMarker",afterDatasetsDraw(ch,args,opts){
 function render(){
   if(!state.rows.length)return;
   const dtxt=dealerText();$("kDealer").textContent=dtxt||"—";
+  {const el=$("btLight"),h=state.source==="auto"?btHtml(state.bt,state.spot,state.atr):"";el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if($("signMode").value==="dealer"&&!state.dw)$("msg").textContent="這份資料沒有三大法人部位，「自營商實際淨部位」暫以「Call 多、Put 空」計算。";
   else if($("msg").textContent.startsWith("這份資料沒有三大法人"))$("msg").textContent="";
   const r=(+$("rate").value||0)/100,S=state.spot,pct=Math.min(20,Math.max(2,+$("scanPct").value||8))/100;
@@ -782,7 +815,7 @@ function applySnapshot(snap,origin){
     return {code,grp:groupOf(code),exp:new Date(y,m-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
   const val=new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00");
   const keep=state.source==="auto"&&state.tradeDate===snap.tradeDate?state.included:{};
-  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,oiTotals:snap.oiTotals||null,dw:snap.dealerWeights||null,inst:snap.institutional||null};
+  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,oiTotals:snap.oiTotals||null,dw:snap.dealerWeights||null,inst:snap.institutional||null,bt:snap.btSignal||null};
   mode="auto";$("spot").value=Math.round(+snap.F);$("valDate").value=toLocalInput(val);
   const b=$("srcBadge");b.className="src";
   b.textContent=`每日自動更新｜資料日 ${snap.tradeDate.replace(/-/g,"/")}｜台指期 ${snap.futContract||""} ${fmt(+snap.F,0)}${origin?"｜"+origin:""}`;

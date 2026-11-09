@@ -99,13 +99,21 @@ def add_forward(rows):
             r["rv5"] = math.sqrt(sum(x * x for x in rets) / 5) * math.sqrt(252)
             if r.get("iv"):
                 r["rv_iv"] = r["rv5"] / (r["iv"] * 100)
+    # 近 5 日 ATR%（當日已知），用於控制「波動延續」
+    for i, r in enumerate(rows):
+        if i >= 5:
+            trs = []
+            for j in range(i - 4, i + 1):
+                a, c = rows[j - 1], rows[j]
+                trs.append(max(c["high"] - c["low"], abs(c["high"] - a["close"]), abs(c["low"] - a["close"])) / a["close"] * 100)
+            r["atr5p"] = sum(trs) / 5
     # 60 日滾動百分位（GEX 會隨指數水位與 OI 成長，用相對位置才可跨期比較）
     for key in ("naive_gex", "dealer_gex", "near_gex"):
+        vals = [x.get(key) for x in rows]
         for i, r in enumerate(rows):
-            win = [x[key] for x in rows[max(0, i - 59):i + 1] if x.get(key) is not None]
-            if r.get(key) is None or len(win) < 40:
-                continue
-            r[key + "_pct"] = sum(1 for x in win if x <= r[key]) / len(win)
+            p = tg.gex_pct(vals[:i + 1], r.get(key))
+            if p is not None:
+                r[key + "_pct"] = p
     # 與 Flip 的距離（以 ATM IV 換算的日 σ 為單位）
     for r in rows:
         for m in ("naive", "dealer"):
@@ -113,6 +121,29 @@ def add_forward(rows):
             if f and r.get("iv"):
                 sd = r["F"] * r["iv"] / math.sqrt(252)
                 r[m + "_dist"] = (r["F"] - f) / sd
+
+
+def ols(X, y):
+    """小型最小平方法（3 個變數以內），回傳係數與 t 值"""
+    k = len(X[0])
+    XtX = [[sum(r[i] * r[j] for r in X) for j in range(k)] for i in range(k)]
+    Xty = [sum(r[i] * v for r, v in zip(X, y)) for i in range(k)]
+    # 高斯消去求反矩陣
+    A = [row[:] + [1.0 if i == j else 0.0 for j in range(k)] for i, row in enumerate(XtX)]
+    for i in range(k):
+        p = max(range(i, k), key=lambda r: abs(A[r][i]))
+        A[i], A[p] = A[p], A[i]
+        d = A[i][i]
+        A[i] = [x / d for x in A[i]]
+        for r in range(k):
+            if r != i:
+                f = A[r][i]
+                A[r] = [x - f * z for x, z in zip(A[r], A[i])]
+    inv = [row[k:] for row in A]
+    beta = [sum(inv[i][j] * Xty[j] for j in range(k)) for i in range(k)]
+    res = [v - sum(b * x for b, x in zip(beta, r)) for r, v in zip(X, y)]
+    s2 = sum(e * e for e in res) / (len(y) - k)
+    return beta, [beta[i] / math.sqrt(s2 * inv[i][i]) for i in range(k)]
 
 
 def bucket_stats(rows, keyf, label):
@@ -187,6 +218,32 @@ def main():
     for y in sorted({r["date"][:4] for r in rows}):
         sub = [r for r in rows if r["date"][:4] == y]
         stats += bucket_stats(sub, q5("naive_gex_pct"), f"{y} naive GEX 百分位")
+    # 燈號分組（與 txo_gex.bt_bucket 相同定義），供儀表板顯示
+    sig = {}
+    for r in rows:
+        r["bucket"] = tg.bt_bucket(r["F"], r.get("naive_flip"), r.get("naive_gex"))
+    for b in ("red", "green"):
+        v = [r for r in rows if r["bucket"] == b and r.get("tr1") is not None]
+        if not v:
+            continue
+        sig[b] = {"n": len(v), "tr1": round(st.mean(x["tr1"] for x in v), 3),
+                  "absret1": round(st.mean(abs(x["ret1"]) for x in v), 3),
+                  "big": round(st.mean(1 if abs(x["ret1"]) >= 1.5 else 0 for x in v), 3),
+                  "rv_iv": round(st.mean(x["rv_iv"] for x in v if x.get("rv_iv")), 3),
+                  "up": round(st.mean(1 if x["ret1"] > 0 else 0 for x in v), 3)}
+    allv = [r for r in rows if r.get("tr1") is not None]
+    # 隔日真實波幅% = a + b × 近5日ATR% + c × 紅燈（最小平方法），儀表板用來估計明日波幅
+    reg = [r for r in allv if r.get("atr5p") is not None]
+    X = [[1.0, r["atr5p"], 1.0 if r["bucket"] == "red" else 0.0] for r in reg]
+    y = [r["tr1"] for r in reg]
+    coef, tval = ols(X, y)
+    sig["_model"] = {"a": round(coef[0], 4), "b": round(coef[1], 4), "c": round(coef[2], 4),
+                     "t_red": round(tval[2], 2), "n": len(reg)}
+    sig["_meta"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "days": len(allv),
+                    "tr1": round(st.mean(x["tr1"] for x in allv), 3),
+                    "big": round(st.mean(1 if abs(x["ret1"]) >= 1.5 else 0 for x in allv), 3)}
+    json.dump(sig, open(os.path.join(OUT, "signal.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    stats += bucket_stats(rows, lambda r: r["bucket"], "回測燈號")
     json.dump({"rows": len(rows), "from": rows[0]["date"], "to": rows[-1]["date"], "stats": stats},
               open(os.path.join(OUT, "stats.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     keys = ["date", "F", "open", "high", "low", "close", "iv", "oiC", "oiP", "naive_gex", "naive_flip", "naive_dist",
