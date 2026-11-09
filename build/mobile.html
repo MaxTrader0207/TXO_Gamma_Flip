@@ -145,6 +145,12 @@ table.mini th{color:var(--muted);font-weight:500}
 .expchip{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
 .expchip.soon{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);font-weight:700}
 .hl{color:var(--neg);font-weight:700}
+.bstat{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.bstat.ok{background:color-mix(in srgb,var(--pos) 18%,transparent);color:var(--pos)}
+.bstat.bad{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
+.bstat.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
+.bstat.mid{background:var(--chip);color:var(--muted)}
+.board td:first-child{white-space:normal;min-width:180px}
 </style>
 
 <header class="bar">
@@ -200,7 +206,8 @@ table.mini th{color:var(--muted);font-weight:500}
   </section>
 
   <section id="paperCard" class="card" hidden>
-    <h2>模擬帳本 <small>賣方與買方規則的實際追蹤</small></h2>
+    <h2>規則總覽與模擬帳本</h2>
+    <div id="boardBody"></div>
     <div id="paperBody"></div>
   </section>
 
@@ -347,24 +354,30 @@ ${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt
 }
 
 /* 賣方履約價（回測規則）：最近到期、履約價距離 = k × 預估波幅 × √持有交易日數，只在綠燈日做 */
+/* 台灣休市日（由資料管線從證交所抓取），剩餘交易日會扣掉 */
+let HOLI=new Set();
+const isoD=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 function tradingDaysTo(val,exp){let n=0;const d=new Date(val.getFullYear(),val.getMonth(),val.getDate());
-  while(d<exp){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6&&d<=exp)n++;}return Math.max(1,n);}
+  while(d<exp){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6&&d<=exp&&!HOLI.has(isoD(d)))n++;}return Math.max(1,n);}
+/* 成交價：賣出用最後最佳買價、買進用最後最佳賣價；舊資料沒有買賣價時用結算價 */
+function qp(x,side){if(!x)return null;if(x.bid===undefined)return isFinite(x.px)&&x.px>0?x.px:null;const v=side==="sell"?x.bid:x.ask;return v!=null&&v>0?v:null;}
+function qlbl(x,side){return x&&x.bid!==undefined?(side==="sell"?"買價":"賣價"):"結算價";}
 function btSellHtml(bt,F,atr,rows,val){
   const st=bt.stats&&bt.stats._strategy,m=bt.stats&&bt.stats._model;
   if(!st||!st.tiers||!m||!atr||!F||!rows||!rows.length||!val)return "";
   const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),red=bt.bucket==="red";
   const live=rows.filter(x=>x.exp>val);if(!live.length)return "";
   const exp=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+exp).code;
-  const ch=live.filter(x=>x.code===code&&isFinite(x.px)&&x.px>0),n=tradingDaysTo(val,exp);
+  const ch=live.filter(x=>x.code===code&&qp(x,"sell")!=null),n=tradingDaysTo(val,exp);
   const E=(m.a+m.b*atr/F*100+(red?m.c:0))/100*F,ds=`${exp.getMonth()+1}/${exp.getDate()}`;
   const head=`<b>賣方履約價（回測規則）</b>：${code}（${ds} 結算，剩 ${n} 個交易日），Call＋Put 各賣一口、持有到結算。`;
   const statTxt=t=>{const f=t.full,o=t.oos,c=t.cost2;return `全期平均 ${f.avg>=0?"+":""}${f1(f.avg)} 點、最大回撤 ${n0(f.dd)}（t≈${f1(f.t)}）`+
-    (o?`；樣本外平均 ${o.avg>=0?"+":""}${f1(o.avg)}、回撤 ${n0(o.dd)}（t≈${f1(o.t)}）`:"")+(c?`；成本每腳 2 點時平均 ${f1(c.avg)}`:"");};
+    (o?`；樣本外平均 ${o.avg>=0?"+":""}${f1(o.avg)}、回撤 ${n0(o.dd)}（t≈${f1(o.t)}）`:"")+(c?`；每腳成本再加到 2 點時平均 ${f1(c.avg)}`:"");};
   if(red){const r=st.tiers[0].red;
     return `<p class="bt-sell no">${head}<b>今天是紅燈，回測不做賣方</b>${r?`：紅燈日同規則累計 ${n0(r.total)} 點、最大單筆 ${n0(r.worst)} 點`:""}。若一定要做，改成有保護腳的價差並減少口數。</p>`;}
   const li=st.tiers.map(t=>{const D=t.k*E*Math.sqrt(n);
     const c=ch.filter(x=>x.isCall&&x.K>=F+D).sort((a,b)=>a.K-b.K)[0],p=ch.filter(x=>!x.isCall&&x.K<=F-D).sort((a,b)=>b.K-a.K)[0];
-    const legs=c&&p?`賣 Call <b>${n0(c.K)}</b>（${f1(c.px)}）＋ 賣 Put <b>${n0(p.K)}</b>（${f1(p.px)}），合計 ${f1(c.px+p.px)} 點`
+    const legs=c&&p?`賣 Call <b>${n0(c.K)}</b>（${qlbl(c,"sell")} ${f1(qp(c,"sell"))}）＋ 賣 Put <b>${n0(p.K)}</b>（${qlbl(p,"sell")} ${f1(qp(p,"sell"))}），合計 ${f1(qp(c,"sell")+qp(p,"sell"))} 點`
       :`超出有報價的履約價範圍，<b>不進場</b>`;
     return `<li><b>${t.name}</b>（${t.k} × 預估波幅 × √${n} ≈ ±${n0(D)} 點）：${legs}<br><span class="bt-src">${statTxt(t)}</span></li>`;}).join("");
   return `<div class="bt-sell"><div>${head}</div><ul class="bt-tiers">${li}</ul><span class="bt-src">標準級收得多但樣本外不穩（曾回撤近千點）；保守級樣本外穩定，但權利金只有約 5 點，成本稍高就幾乎不賺。持有期間轉紅燈出場或 3 倍停損，回測反而更差。</span></div>`;
@@ -379,13 +392,13 @@ function btBuyHtml(bt,F,rows,val){
   const red=bt.bucket==="red",exp=bt.expand===true,down=bt.ret!=null&&bt.ret<0;
   const live=rows.filter(x=>x.exp>val);if(!live.length)return "";
   const e=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+e).code;
-  const ch=live.filter(x=>x.code===code&&isFinite(x.px)&&x.px>0);
+  const ch=live.filter(x=>x.code===code&&qp(x,"buy")!=null);
   const Ks=[...new Set(ch.map(x=>x.K))].filter(K=>ch.some(x=>x.K===K&&x.isCall)&&ch.some(x=>x.K===K&&!x.isCall));
   const K=Ks.length?Ks.reduce((a,k)=>Math.abs(k-F)<Math.abs(a-F)?k:a,Ks[0]):null;
   const c=K!=null?ch.find(x=>x.K===K&&x.isCall):null,p=K!=null?ch.find(x=>x.K===K&&!x.isCall):null;
   const ds=`${e.getMonth()+1}/${e.getDate()}`,ideas=[];
-  if(red&&exp&&c&&p)ideas.push(`<li><b>買價平跨式</b>：${code}（${ds} 結算）買 ${n0(K)} Call（${f1(c.px)}）＋ ${n0(K)} Put（${f1(p.px)}），共 ${f1(c.px+p.px)} 點，持有到結算。回測：${st(B.straddle.full)}${halves(B.straddle)}</li>`);
-  if(red&&down&&c)ideas.push(`<li><b>買價平 Call（跌深反彈）</b>：${code} 買 ${n0(K)} Call（${f1(c.px)}），持有到結算。回測：${st(B.call.full)}${halves(B.call)}</li>`);
+  if(red&&exp&&c&&p)ideas.push(`<li><b>買價平跨式</b>：${code}（${ds} 結算）買 ${n0(K)} Call（${qlbl(c,"buy")} ${f1(qp(c,"buy"))}）＋ ${n0(K)} Put（${qlbl(p,"buy")} ${f1(qp(p,"buy"))}），共 ${f1(qp(c,"buy")+qp(p,"buy"))} 點，持有到結算。回測：${st(B.straddle.full)}${halves(B.straddle)}</li>`);
+  if(red&&down&&c)ideas.push(`<li><b>買價平 Call（跌深反彈）</b>：${code} 買 ${n0(K)} Call（${qlbl(c,"buy")} ${f1(qp(c,"buy"))}），持有到結算。回測：${st(B.call.full)}${halves(B.call)}</li>`);
   const why=`今天${red?"紅燈":"綠燈"}、近 5 日 ATR ${bt.expand==null?"—":exp?"放大中":"沒有放大"}、當日${bt.ret==null?"—":(bt.ret>=0?"上漲 ":"下跌 ")+Math.abs(bt.ret).toFixed(2)+"%"}`;
   const none=`<span>回測條件不成立，<b>不做買方</b>。對照：其他日子買價平跨式 ${st(B.straddleOther.full)}；綠燈下跌日買 Call ${st(B.callGreenDown.full)}；買價外勒式 ${st(B.otm.full)}。</span>`;
   return `<div class="bt-sell bt-buy"><div><b>買方條件（回測）</b>：${why}。</div>${ideas.length?`<ul class="bt-tiers">${ideas.join("")}</ul>`:none}
@@ -403,12 +416,33 @@ function btMaHtml(bt,F,rows,val){
   if(ma.breaks&&ma.breaks.length){
     const live=(rows||[]).filter(x=>x.exp>val);
     if(live.length){const e=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+e).code;
-      const c=live.filter(x=>x.code===code&&x.isCall&&isFinite(x.px)&&x.px>0&&x.K>=F*1.01).sort((a,b)=>a.K-b.K)[0];
-      act=`<li><b>今天近期第一次跌破 ${ma.breaks.map(n=>n+"MA").join("、")}，且均線上揚</b>：${c?`買 ${code}（${e.getMonth()+1}/${e.getDate()} 結算）${n0(c.K)} Call（${f1(c.px)}），持有到結算`:"找不到價外 1% 的報價"}。${red?"今天也是紅燈，回測勝率較高":"今天是綠燈，回測綠燈時這條規則不賺"}。</li>`;}
+      const c=live.filter(x=>x.code===code&&x.isCall&&qp(x,"buy")!=null&&x.K>=F*1.01).sort((a,b)=>a.K-b.K)[0];
+      act=`<li><b>今天近期第一次跌破 ${ma.breaks.map(n=>n+"MA").join("、")}，且均線上揚</b>：${c?`買 ${code}（${e.getMonth()+1}/${e.getDate()} 結算）${n0(c.K)} Call（${qlbl(c,"buy")} ${f1(qp(c,"buy"))}），持有到結算`:"找不到價外 1% 的報價"}。${red?"今天也是紅燈，回測勝率較高":"今天是綠燈，回測綠燈時這條規則不賺"}。</li>`;}
   }
   return `<div class="bt-sell bt-ma"><div><b>均線跌破（回測）</b>：${state}。</div>
 ${act?`<ul class="bt-tiers">${act}</ul>`:`<span>今天沒有「近期第一次跌破、且均線上揚」的訊號。</span>`}
 <span class="bt-src">回測 ${M.from}～${M.to}（任一均線、跌破前連續 ${M.N} 日站上、今天均線高於${M.slope===1?"昨天":` ${M.slope} 日前`}）：買當週價外 1% Call 持有到結算 ${st(M.call)}；同樣條件買 Put ${st(M.put)}；隔日就出場 ${st(M.callNext)}；對照每天都買價外 1% Call ${st(M.baseCall)}。依燈號分：紅燈 ${st(sr)}，綠燈 ${st(sg)}。樣本很少、期間又是大多頭，結果偏向「多頭回測均線買反彈」，請當參考。</span></div>`;
+}
+
+/* 規則總覽：回測（全期／前段／後段、買賣價成交）＋模擬帳本實績，判斷每條規則目前是否可參考 */
+function boardHtml(B,pp){
+  if(!B||!B.rules)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),sg=v=>(v>=0?"+":"")+f1(v);
+  const live={};for(const t of (pp&&pp.tiers)||[])live[t.name]=t;
+  const cell=s=>s?`${sg(s.avg)}<span class="muted">｜${s.n} 筆｜t ${s.t==null?"—":f1(s.t)}</span>`:"—";
+  const rows=B.rules.map(r=>{const f=r.full,a=r.first,b=r.second,L=live[r.key];
+    const ln=L&&L.closed?L.closed:0,la=ln?L.total/ln:null;
+    let st,cls;
+    if(!f||f.avg<=0||(f.t!=null&&f.t<1.5)){st="回測不支持";cls="bad";}
+    else if(!a||!b||a.avg<=0||b.avg<=0){st="前後段不一致";cls="warn";}
+    else if(ln<10){st=`實績累積中（${ln} 筆）`;cls="mid";}
+    else if(la<f.avg-2*f.sd/Math.sqrt(ln)){st="實績明顯落後，暫停參考";cls="bad";}
+    else {st="正常";cls="ok";}
+    const lv=ln?`${sg(la)}<span class="muted">｜${ln} 筆｜累計 ${sg(L.total)}</span>`:"—";
+    const gap=r.settle&&f?`${sg(f.avg-r.settle.avg)}`:"—";
+    return `<tr><td>${r.name}</td><td>${cell(f)}</td><td>${cell(a)}</td><td>${cell(b)}</td><td>${gap}</td><td>${lv}</td><td><span class="bstat ${cls}">${st}</span></td></tr>`;}).join("");
+  return `<div class="tablewrap"><table class="mini board"><thead><tr><th>規則</th><th>回測全期（平均／筆數／t）</th><th>前段</th><th>後段（${B.mid} 起）</th><th>買賣價 vs 結算價成交差</th><th>模擬帳本實績</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table></div>
+<p class="paper-note">回測期間 ${B.from}～${B.to}，以當日最後最佳買價（賣出）／最後最佳賣價（買進）成交，另扣手續費＋稅 ${B.fee} 點／腳。狀態判斷：回測平均 ≤0 或 t&lt;1.5 →「回測不支持」；前段或後段任一段平均 ≤0 →「前後段不一致」；模擬帳本已結算 ≥10 筆且平均低於「回測平均 − 2 個標準誤」→「暫停參考」。</p>`;
 }
 
 /* 模擬帳本：管線每天依回測規則記錄的賣方部位（到期後以最後結算價算損益） */
@@ -589,7 +623,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
-  {const h=paperHtml(state.paper,12);$("paperCard").hidden=!h;$("paperBody").innerHTML=h;}
+  {const h=paperHtml(state.paper,12),b=boardHtml(state.bt?.stats?._board,state.paper);$("paperCard").hidden=!(h||b);$("paperBody").innerHTML=h;$("boardBody").innerHTML=b;}
   {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr,state.rows,state.val);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
   {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
@@ -733,8 +767,10 @@ function schedule(){$("status").textContent="重新計算中…";requestAnimatio
 /* ---------- data ---------- */
 function applySnapshot(snap){
   if(!snap||!Array.isArray(snap.rows)||!snap.rows.length)return false;
-  const rows=snap.rows.map(([code,exp,K,cp,px,oi])=>{const [y,mo,d]=exp.split("-").map(Number);
-    return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
+  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);
+  const rows=snap.rows.map(([code,exp,K,cp,px,oi,bid,ask])=>{const [y,mo,d]=exp.split("-").map(Number);
+    return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi,
+      ...(hasQ?{bid:bid==null?null:+bid,ask:ask==null?null:+ask}:{})};});
   const keep=state.tradeDate===snap.tradeDate?state.included:{};
   state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,dw:snap.dealerWeights||null,inst:snap.institutional||null,bt:snap.btSignal||null,paper:snap.paper||null};
   render();return true;
