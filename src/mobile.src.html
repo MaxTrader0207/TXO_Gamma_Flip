@@ -144,6 +144,7 @@ table.mini th{color:var(--muted);font-weight:500}
 .expchips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
 .expchip{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
 .expchip.soon{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);font-weight:700}
+.hl{color:var(--neg);font-weight:700}
 </style>
 
 <header class="bar">
@@ -355,7 +356,7 @@ function renderBlock(){
     <p class="verdict">${adv.verdict}</p>
     <dl class="lv">${adv.levels.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
     <h2>具體操作</h2>
-    <ol class="plan">${adv.plan.map(t=>`<li><span>${bold(t)}</span></li>`).join("")}</ol>
+    <ol class="plan">${adv.plan.map(t=>`<li><span>${hlPlan(t)}</span></li>`).join("")}</ol>
     <div class="acts"><button type="button" class="btn primary" data-ex="copy">複製到 LINE／筆記</button><button type="button" class="btn dl" data-ex="txt">下載 .txt</button></div>
     <div class="acts"><button type="button" class="btn" data-ex="copyall">複製三個區塊</button></div>`;
 }

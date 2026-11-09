@@ -144,6 +144,7 @@ table.mini th{color:var(--muted);font-weight:500}
 .expchips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
 .expchip{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
 .expchip.soon{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);font-weight:700}
+.hl{color:var(--neg);font-weight:700}
 </style>
 
 <header class="bar">
@@ -459,6 +460,16 @@ function strikeNear(rows,target,isCall,dir){
 }
 function px(rows,K,isCall){const o=rows.find(x=>x.K===K&&x.isCall===isCall);return o&&isFinite(o.px)?o.px:null;}
 const r10=v=>Math.round(v/10)*10;
+/* 具體操作的重點標紅：停損、目標、失效／翻轉條件、關鍵動作（匯出時會被 strip 拿掉，不影響文字） */
+function hlPlan(t){
+  if(/<[a-z]/i.test(t))return t;
+  return t
+    .replace(/^([^：]{2,18})(：)/,'<b class="hl">$1</b>$2')
+    .replace(/(停損[^，。；（）]*)/g,'<span class="hl">$1</span>')
+    .replace(/(目標 [^，。；]*)/g,'<span class="hl">$1</span>')
+    .replace(/(單邊最大風險約 [\d,.]+ 點|最大獲利約 [\d,.]+ 點)/g,'<span class="hl">$1</span>')
+    .replace(/(不追價|不建新倉|全部停止|全數回補|不要逆勢加空|口數比正 Gamma 時減半|區間單全部了結|不宜逆勢押注價平|避免裸賣[^，。；]*|不要押注結算在這裡|區間策略停止|改用負 Gamma 的順勢做法)/g,'<span class="hl">$1</span>');
+}
 function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,refCode,A,atrReal}){
   const half=r10(A/2),width=Math.max(100,Math.round(A/100)*100);
   const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
@@ -532,9 +543,10 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
       plan.push(`選擇權（${next.code}）：Flip 附近容易出現波動擴張，可考慮買 ${fmt(k0)} 跨式，以結算價估成本約 ${fmt(c,1)} 點，損平 ${fmt(k0-c,0)}／${fmt(k0+c,0)}。`);}
   }
   if(turnsNeg){const fp=fPost??S;
-    plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：若指數仍在 ${P(fPost)} 之下，區間單全部了結，改為反彈至 ${fmt(r10(fp-0.5*A),0)}～${P(fPost)} 不過偏空，停損站上 ${fmt(r10(fp+0.5*A),0)}。`);}
+    plan.push(fPost!=null?`結算後（${fmtD(next.exp).slice(5)} 收盤起）：若指數仍在 ${P(fPost)} 之下，區間單全部了結，改為反彈至 ${fmt(r10(fp-0.5*A),0)}～${P(fPost)} 不過偏空，停損站上 ${fmt(r10(fp+0.5*A),0)}。`
+      :`結算後（${fmtD(next.exp).slice(5)} 收盤起）：剩下的到期在掃描範圍內整段是負 Gamma（沒有 Flip），區間單全部了結，改為反彈至 ${fmt(r10(S),0)}～${fmt(r10(S+0.5*A),0)} 不過偏空，停損站上 ${fmt(r10(S+A),0)}。`);}
   if(turnsPos)plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：負 Gamma 部位退場，空單逢低回補，若站穩 ${P(fPost)} 改回區間思維。`);
-  if(expiring)plan.push(`結算日提醒：${next.code} 剩 ${next.days.toFixed(1)} 天，結算前價格容易被 ${P(next.pin)} 吸住；最後結算價取 13:00～13:30 平均，結算日午盤不宜逆勢押注價平。`);
+  if(expiring)plan.push(`結算日提醒：${next.code} 剩 ${next.days.toFixed(1)} 天，最大未平倉在 ${P(next.pin)}（回測沒有穩定的磁吸效果，不要押注結算在這裡）；最後結算價取 13:00～13:30 平均，結算日午盤不宜逆勢押注價平。`);
   plan.push(contrib);
   return {regime,label,tagCls,verdict,levels,plan,fPost,gPost,next,sT,share,turnsNeg,turnsPos,expList};
 }
@@ -649,7 +661,7 @@ function renderBlock(){
     <p class="verdict">${adv.verdict}</p>
     <dl class="lv">${adv.levels.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
     <h2>具體操作</h2>
-    <ol class="plan">${adv.plan.map(t=>`<li><span>${bold(t)}</span></li>`).join("")}</ol>
+    <ol class="plan">${adv.plan.map(t=>`<li><span>${hlPlan(t)}</span></li>`).join("")}</ol>
     <div class="acts"><button type="button" class="btn primary" data-ex="copy">複製到 LINE／筆記</button><button type="button" class="btn dl" data-ex="txt">下載 .txt</button></div>
     <div class="acts"><button type="button" class="btn" data-ex="copyall">複製三個區塊</button></div>`;
 }
