@@ -69,7 +69,7 @@ def main():
     # 管線解析結果（未套用 ±15% 與到期過濾）
     parsed = tg.parse_options(txt).get(d, [])
     p = defaultdict(lambda: [0, 0])
-    for code, exp, k, cp, px, oi in parsed:
+    for code, exp, k, cp, px, oi, *_ in parsed:
         p[code][0 if cp == "C" else 1] += oi
     log("管線 parse_options 結果（未過濾）：\n")
     log("| 到期 | 買權 OI | 賣權 OI |\n|---|---|---|")
@@ -109,7 +109,7 @@ def main():
             sub = big[big[mcol].astype(str).str.replace(r"\s", "", regex=True) == mon]
             web = {(float(k), str(cp).strip()[:2]): pd.to_numeric(str(o).replace(",", ""), errors="coerce")
                    for k, cp, o in zip(sub[kcol], sub[ccol], sub[ocol])}
-            mine = {(k, "買權" if cp == "C" else "賣權"): oi for code, exp, k, cp, px, oi in parsed if code == mon}
+            mine = {(k, "買權" if cp == "C" else "賣權"): oi for code, exp, k, cp, px, oi, *_ in parsed if code == mon}
             diff = [(k, v, web.get(k)) for k, v in mine.items() if web.get(k) is not None and web.get(k) != v]
             miss = [k for k in web if k not in mine and (web[k] or 0) > 0]
             log(f"### {mon}\n網頁 {len(web)} 筆、管線 {len(mine)} 筆；數值不同 {len(diff)} 筆；網頁有 OI 但管線缺 {len(miss)} 筆\n")

@@ -276,7 +276,7 @@ def year_frac(exp_iso, val):
 def enrich(rows, F, val, fallback=0.18):
     """回傳 [(code, grp, K, call, T, iv, oi)]，與儀表板相同的 IV 補值規則"""
     by = {}
-    for code, exp, k, cp, px, oi in rows:
+    for code, exp, k, cp, px, oi, *_ in rows:
         T = year_frac(exp, val)
         call = cp == "C"
         by.setdefault(code, []).append(dict(code=code, K=k, call=call, T=T, oi=oi, iv=implied_vol(px, F, k, T, call)))
