@@ -145,6 +145,12 @@ table.mini th{color:var(--muted);font-weight:500}
 .expchip{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
 .expchip.soon{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);font-weight:700}
 .hl{color:var(--neg);font-weight:700}
+.bstat{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.bstat.ok{background:color-mix(in srgb,var(--pos) 18%,transparent);color:var(--pos)}
+.bstat.bad{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
+.bstat.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
+.bstat.mid{background:var(--chip);color:var(--muted)}
+.board td:first-child{white-space:normal;min-width:180px}
 </style>
 
 <header class="bar">
@@ -200,7 +206,8 @@ table.mini th{color:var(--muted);font-weight:500}
   </section>
 
   <section id="paperCard" class="card" hidden>
-    <h2>模擬帳本 <small>賣方與買方規則的實際追蹤</small></h2>
+    <h2>規則總覽與模擬帳本</h2>
+    <div id="boardBody"></div>
     <div id="paperBody"></div>
   </section>
 
@@ -284,7 +291,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
-  {const h=paperHtml(state.paper,12);$("paperCard").hidden=!h;$("paperBody").innerHTML=h;}
+  {const h=paperHtml(state.paper,12),b=boardHtml(state.bt?.stats?._board,state.paper);$("paperCard").hidden=!(h||b);$("paperBody").innerHTML=h;$("boardBody").innerHTML=b;}
   {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr,state.rows,state.val);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
   {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
@@ -428,8 +435,10 @@ function schedule(){$("status").textContent="重新計算中…";requestAnimatio
 /* ---------- data ---------- */
 function applySnapshot(snap){
   if(!snap||!Array.isArray(snap.rows)||!snap.rows.length)return false;
-  const rows=snap.rows.map(([code,exp,K,cp,px,oi])=>{const [y,mo,d]=exp.split("-").map(Number);
-    return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
+  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);
+  const rows=snap.rows.map(([code,exp,K,cp,px,oi,bid,ask])=>{const [y,mo,d]=exp.split("-").map(Number);
+    return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi,
+      ...(hasQ?{bid:bid==null?null:+bid,ask:ask==null?null:+ask}:{})};});
   const keep=state.tradeDate===snap.tradeDate?state.included:{};
   state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,dw:snap.dealerWeights||null,inst:snap.institutional||null,bt:snap.btSignal||null,paper:snap.paper||null};
   render();return true;

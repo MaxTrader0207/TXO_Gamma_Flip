@@ -15,7 +15,25 @@ import backtest as bt  # noqa: E402
 import txo_gex as tg  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "backtest")
-COST = 1.0      # 每口每腳成本（點）：手續費＋稅＋滑價的保守估計
+# 成交方式：quote＝賣出用當日最後最佳買價、買進用最後最佳賣價（買賣價差已含在成交價），另扣手續費＋稅約 0.5 點；
+#           settle＝用結算價成交，每腳扣 1 點（舊做法，保留作對照）
+FILL = os.environ.get("BT_FILL", "quote")
+COST = 0.5 if FILL == "quote" else 1.0
+
+
+def set_fill(mode):
+    global FILL, COST
+    FILL = mode
+    COST = 0.5 if mode == "quote" else 1.0
+
+
+def price(row, call, side):
+    """row：[K, C結算, P結算, C買, C賣, P買, P賣]；side：sell／buy／settle"""
+    settle = row[1] if call else row[2]
+    if FILL != "quote" or side == "settle" or len(row) < 7:
+        return settle
+    bid, ask = (row[3], row[4]) if call else (row[5], row[6])
+    return bid if side == "sell" else ask
 PV = 50         # 每點 50 元
 
 
@@ -51,12 +69,12 @@ def trades(rows, model):
     return out
 
 
-def pick(chain, target, call):
-    """Call：≥ target 的最低履約價；Put：≤ target 的最高履約價（需有報價）"""
+def pick(chain, target, call, side="sell"):
+    """Call：≥ target 的最低履約價；Put：≤ target 的最高履約價（需有可成交的報價）"""
     if call:
-        c = [(k, cp) for k, cp, pp in chain if k >= target and cp]
+        c = [(row[0], price(row, True, side)) for row in chain if row[0] >= target and price(row, True, side)]
         return min(c) if c else None
-    c = [(k, pp) for k, cp, pp in chain if k <= target and pp]
+    c = [(row[0], price(row, False, side)) for row in chain if row[0] <= target and price(row, False, side)]
     return max(c) if c else None
 
 
@@ -68,7 +86,7 @@ def leg(t, dist, call, wing=None):
     pay = max(0.0, t["S_T"] - K) if call else max(0.0, K - t["S_T"])
     pnl = px - COST - pay
     if wing:  # 買進更外側的保護腳，變成信用價差
-        q = pick(t["chain"], K + wing if call else K - wing, call)
+        q = pick(t["chain"], K + wing if call else K - wing, call, side="buy")
         if not q:
             return None
         K2, px2 = q

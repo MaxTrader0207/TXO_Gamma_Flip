@@ -19,7 +19,6 @@ import strategy_bt as sb  # noqa: E402
 import txo_gex as tg  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "backtest")
-COST = 1.0
 
 
 def sma(xs, n, i):
@@ -34,14 +33,14 @@ def option_trade(rows, idx, i, call, otm=0.01, exit_="hold"):
     j = idx[e]
     F = r["close"]
     tgt = F * (1 + otm) if call else F * (1 - otm)
-    p = sb.pick(r["chain"], tgt, call)
+    p = sb.pick(r["chain"], tgt, call, side="buy")
     if not p:
         return None
     K, p0 = p
     if exit_ == "hold":
         fin = (rows[j].get("final") or {}).get(code)
         S = fin["S"] if fin and fin["n"] >= 10 else rows[j]["close"]
-        v, c = (max(0.0, S - K) if call else max(0.0, K - S)), COST
+        v, c = (max(0.0, S - K) if call else max(0.0, K - S)), sb.COST
     else:
         nx = rows[i + 1] if i + 1 < len(rows) else None
         if nx is None:
@@ -49,9 +48,9 @@ def option_trade(rows, idx, i, call, otm=0.01, exit_="hold"):
         if i + 1 == j:
             fin = (rows[j].get("final") or {}).get(code)
             S = fin["S"] if fin and fin["n"] >= 10 else rows[j]["close"]
-            v, c = (max(0.0, S - K) if call else max(0.0, K - S)), COST
+            v, c = (max(0.0, S - K) if call else max(0.0, K - S)), sb.COST
         elif nx.get("near_code") == code:
-            v, c = bb.px(nx, K, call), 2 * COST
+            v, c = bb.px(nx, K, call, "sell"), 2 * sb.COST
             if v is None:
                 return None
         else:
@@ -78,7 +77,11 @@ def main():
     rows = [r for r in rows if r["close"] > 0]
     rows.sort(key=lambda r: r["date"])
     idx = {r["date"]: i for i, r in enumerate(rows)}
-    C = [r["close"] for r in rows]
+    # 均線用加權指數現貨收盤；缺現貨資料時退回台指期收盤
+    spot_ok = sum(1 for r in rows if r.get("spot")) >= 0.98 * len(rows)
+    C = [(r.get("spot") or r["close"]) if spot_ok else r["close"] for r in rows]
+    SRC = "加權指數" if spot_ok else "台指期近月"
+    print("均線價格來源：", SRC)
     for r in rows:
         r["red"] = tg.bt_bucket(r["F"], r.get("naive_flip"), r.get("naive_gex")) == "red"
 
@@ -139,14 +142,14 @@ def main():
             c = option_trade(rows, idx, i, True, 0.01, "hold")
             j = idx.get(rows[i].get("near_exp"))
             detail.append({"ma": ma, "date": rows[i]["date"], "close": rows[i]["close"],
-                           "maVal": round(sma(C, ma, i)), "light": "紅" if rows[i]["red"] else "綠",
+                           "maVal": round(sma(C, ma, i)), "px": C[i], "light": "紅" if rows[i]["red"] else "綠",
                            "S_T": None if j is None else rows[j]["close"],
                            "put": p and {"K": p["K"], "prem": p["prem"], "pnl": p["pnl"]},
                            "call": c and {"K": c["K"], "prem": c["prem"], "pnl": c["pnl"]}})
     detail.sort(key=lambda x: (x["date"], x["ma"]))
     ezh = {"hold": "持有到結算", "next": "隔日出場"}
     L = ["# 均線跌破買方回測（當週週選價外 1%）\n",
-         f"期間 {rows[0]['date']} ～ {rows[-1]['date']}（100MA 需 100 日暖機，實際可用期間較短）。台指期近月收盤計算均線；",
+         f"期間 {rows[0]['date']} ～ {rows[-1]['date']}（100MA 需 100 日暖機，實際可用期間較短）。均線以{SRC}收盤計算；",
          "跌破＝今天收盤 < 均線且昨天 ≥ 均線；近期第一次＝跌破前連續 N 日收在均線之上；均線上揚＝今天均線高於昨天。",
          "跌破當天收盤以結算價買進最近到期週選、履約價在現價 ±1% 之外最近的一檔；每腳每次進出扣 1 點。損益單位：點。\n",
          "| 均線 | N | 買 | 出場 | 次數 | 勝率 | 平均 | 累計 | 最大獲利 | 最大虧損 | t | roi | 平均權利金 |",
@@ -157,10 +160,10 @@ def main():
     L.append("\n## 跌破當天的 Gamma 燈號（任一均線、N=10、持有到結算）\n\n| 燈號 | 買 | 次數 | 勝率 | 平均 | 累計 | t |\n|---|---|---|---|---|---|---|")
     for x in split:
         L.append(f"| {x['light']} | {x['side']} | {x['n']} | {x['win']:.0%} | {x['avg']} | {x['total']} | {x.get('t', '—')} |")
-    L.append("\n## 事件明細（N=10）\n\n| 日期 | 均線 | 收盤 | 均線值 | 燈號 | 結算日收盤 | Put 履約價／權利金／損益 | Call 履約價／權利金／損益 |\n|---|---|---|---|---|---|---|---|")
+    L.append("\n## 事件明細（N=10）\n\n| 日期 | 均線 | 收盤（均線來源） | 均線值 | 燈號 | 結算日收盤 | Put 履約價／權利金／損益 | Call 履約價／權利金／損益 |\n|---|---|---|---|---|---|---|---|")
     for d in detail:
         f = lambda o: f"{o['K']:.0f}／{o['prem']}／{o['pnl']}" if o else "—"  # noqa: E731
-        L.append(f"| {d['date']} | {d['ma']}MA | {d['close']:.0f} | {d['maVal']} | {d['light']} | {d['S_T']} | {f(d['put'])} | {f(d['call'])} |")
+        L.append(f"| {d['date']} | {d['ma']}MA | {d['px']:.0f} | {d['maVal']} | {d['light']} | {d['S_T']} | {f(d['put'])} | {f(d['call'])} |")
     open(os.path.join(OUT, "ma.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
     json.dump({"results": res, "split": split, "events": detail}, open(os.path.join(OUT, "ma.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
@@ -169,7 +172,7 @@ def main():
     pick = lambda side, exit_: next((x for x in res if x["ma"] == "任一" and x["N"] == 10 and x["side"] == side and x["exit"] == exit_), None)  # noqa: E731
     sp = os.path.join(OUT, "signal.json")
     sig = json.load(open(sp, encoding="utf-8"))
-    sig["_ma"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "N": 10, "slope": 1, "otm": 0.01, "cost": COST,
+    sig["_ma"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "src": SRC, "N": 10, "slope": 1, "otm": 0.01, "cost": sb.COST,
                   "call": pick("Call", "hold"), "put": pick("Put", "hold"), "callNext": pick("Call", "next"),
                   "baseCall": base[("Call", "hold")], "split": split}
     json.dump(sig, open(sp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

@@ -163,6 +163,14 @@ def group_of(code):
 
 
 # ---------------- parse ----------------
+def q(r, i):
+    """最後最佳買／賣價；沒有掛單時為 None"""
+    if i < 0 or i >= len(r):
+        return None
+    v = num(r[i])
+    return round(v, 2) if v and v > 0 else None
+
+
 def parse_options(txt, keep_zero_oi=False):
     head, rows = read_csv(txt)
     if not head:
@@ -171,6 +179,7 @@ def parse_options(txt, keep_zero_oi=False):
         d=col(head, "交易日期"), prod=col(head, "契約", "商品代號", exact=True), mon=col(head, "到期月份"),
         exp=col(head, "契約到期日"), k=col(head, "履約價"), cp=col(head, "買賣權"),
         settle=col(head, "結算價"), close=col(head, "收盤價"), oi=col(head, "未沖銷"), sess=col(head, "交易時段"),
+        bid=col(head, "最後最佳買價"), ask=col(head, "最後最佳賣價"),
     )
     out = {}
     for r in rows:
@@ -195,7 +204,8 @@ def parse_options(txt, keep_zero_oi=False):
             continue
         out.setdefault(td, []).append(
             [code, exp.isoformat(), k, "C" if ("買" in r[c["cp"]] or "call" in r[c["cp"]].lower()) else "P",
-             round(px, 2) if px > 0 else None, int(oi)]
+             round(px, 2) if px > 0 else None, int(oi),
+             q(r, c["bid"]), q(r, c["ask"])]
         )
     return out
 
@@ -361,6 +371,16 @@ def gex_pct(values, v):
 MA_LIST = (30, 60, 100)
 
 
+def spot_ok(past):
+    w = past[-112:]
+    return len(w) >= 100 and all(it.get("spot") for it in w)
+
+
+def ma_prices(past):
+    """均線價格：最近 112 日都有加權指數時用現貨，否則用台指期收盤"""
+    return [it.get("spot") for it in past] if spot_ok(past) else [it.get("close") for it in past]
+
+
 def ma_status(closes, N=10, slope=1):
     """收盤相對 30／60／100 日均線的狀態；breaks＝今天「近期第一次跌破、且均線上揚」的均線（與 scripts/ma_bt.py 相同定義）"""
     C = [c for c in closes if c]
@@ -405,7 +425,7 @@ def attach_signal(latest, seq):
         ret = round((past[-1]["close"] / past[-2]["close"] - 1) * 100, 2)
     return {"bucket": b, "label": BT_LABELS[b], "flip": s["flip"], "gex": s["gex"],
             "pct": round(pct, 3) if pct is not None else None, "expand": expand, "ret": ret,
-            "ma": ma_status([it.get("close") for it in past]), "stats": table}
+            "ma": ma_status(ma_prices(past)), "maSrc": "加權指數" if spot_ok(past) else "台指期近月", "stats": table}
 
 
 # ---------------- main ----------------
@@ -463,7 +483,7 @@ def main():
         summ = summarize(rows, F, val, w)
         inst_out = {who: v for who, v in (inst.get(d) or {}).items()}
         snap = {"tradeDate": d.isoformat(), "valuation": val.isoformat(), "F": F, "futContract": fcode,
-                "fields": ["code", "expiry", "strike", "cp", "settle", "oi"], "rows": rows, "summary": summ,
+                "fields": ["code", "expiry", "strike", "cp", "settle", "oi", "bid", "ask"], "rows": rows, "summary": summ,
                 "oiTotals": oi_tot, "institutional": inst_out,
                 "dealerWeights": list(w) if w else None,
                 "generatedAt": datetime.now(TPE).isoformat(timespec="seconds")}
@@ -476,6 +496,20 @@ def main():
             items[d.isoformat()].update({"open": o, "high": h, "low": l, "close": c})
         latest = snap
         print(d, "F", F, "flip", summ["naive"]["flip"], "dealer", w, summ.get("dealer", {}).get("flip"), "rows", len(rows))
+
+    # 加權指數現貨收盤（均線用）與台灣休市日曆（剩餘交易日用）
+    holi = set()
+    try:
+        import twse
+        first = min(date.fromisoformat(k) for k in items) if items else start
+        tx = twse.taiex(max(first, today - timedelta(days=400)), today)
+        for k, it in items.items():
+            v = tx.get(date.fromisoformat(k))
+            if v:
+                it["spot"] = v
+        holi = twse.holidays([today.year, today.year + 1])
+    except Exception as e:  # noqa: BLE001
+        print("證交所資料失敗：", e)
 
     # 近 5 日 ATR（True Range = max(H-L, |H-前收|, |L-前收|)）
     seq = sorted(items.values(), key=lambda x: x["date"])
@@ -495,9 +529,11 @@ def main():
         it = items.get(latest["tradeDate"], {})
         latest["atr5"] = it.get("atr5")
         latest["ohlc"] = [it.get(k) for k in ("open", "high", "low", "close")]
+        latest["holidays"] = sorted(x.isoformat() for x in holi if x >= today - timedelta(days=7))
         latest["btSignal"] = attach_signal(latest, seq)
         try:
             import paper
+            paper.HOLI = holi
             sig = (latest["btSignal"] or {}).get("stats") or {}
             st_ = sig.get("_strategy") or {}
             tiers = [{"name": t["name"], "k": t["k"]} for t in st_.get("tiers", [])]

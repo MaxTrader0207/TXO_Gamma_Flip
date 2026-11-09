@@ -104,11 +104,16 @@ def compute(days_back):
         rec.update(levels(cs, rows, F))
         rec["near_exp"] = exps.get(near)
         # 最近到期的完整報價（含 OI 為 0 的履約價），供賣方策略回測；以結算價當成交價
+        # 每檔：[履約價, Call 結算價, Put 結算價, Call 買價, Call 賣價, Put 買價, Put 賣價]
         ch = {}
         for r in allr:
             if r[0] == near and r[4] and abs(r[2] - F) / F <= 0.12:
-                ch.setdefault(r[2], [None, None])[0 if r[3] == "C" else 1] = r[4]
-        rec["chain"] = [[k, v[0], v[1]] for k, v in sorted(ch.items())]
+                v = ch.setdefault(r[2], [None] * 6)
+                if r[3] == "C":
+                    v[0], v[2], v[3] = r[4], r[6], r[7]
+                else:
+                    v[1], v[4], v[5] = r[4], r[6], r[7]
+        rec["chain"] = [[k] + v for k, v in sorted(ch.items())]
         # 今天到期的契約：由價內選擇權結算價反推最後結算價（Call：K+C；Put：K−P）
         fin = {}
         for code in {r[0] for r in allr if r[1] == d.isoformat()}:
@@ -124,6 +129,16 @@ def compute(days_back):
             print("  最後結算價推估", d, fin, "TX 收盤", c, flush=True)
         rows_out.append(rec)
         print(d, F, rec["naive_gex"], rec["naive_flip"], rec.get("dealer_gex"), flush=True)
+    # 加權指數現貨收盤（均線回測改用現貨）
+    try:
+        import twse
+        tx = twse.taiex(start, today)
+        for rec in rows_out:
+            rec["spot"] = tx.get(date.fromisoformat(rec["date"]))
+        print("加權指數對上", sum(1 for r in rows_out if r.get("spot")), "/", len(rows_out), flush=True)
+        twse.holidays(range(start.year, today.year + 2))
+    except Exception as e:  # noqa: BLE001
+        print("加權指數／休市日曆失敗", e, flush=True)
     return rows_out
 
 

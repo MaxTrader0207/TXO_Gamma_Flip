@@ -18,13 +18,12 @@ import strategy_bt as sb  # noqa: E402
 import txo_gex as tg  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "backtest")
-COST = 1.0
 
 
-def px(row, K, call):
-    for k, c, p in row.get("chain") or []:
-        if k == K:
-            return c if call else p
+def px(row, K, call, side="settle"):
+    for r in row.get("chain") or []:
+        if r[0] == K:
+            return sb.price(r, call, side)
     return None
 
 
@@ -40,7 +39,7 @@ def build(rows, model):
         S_T = fin["S"] if fin and fin["n"] >= 10 else rows[j]["close"]
         nxt = rows[i + 1]
         same = nxt.get("near_code") == code and i + 1 < j
-        both = [(k, c, p) for k, c, p in r["chain"] if c and p]
+        both = [(x[0], x[1], x[2]) for x in r["chain"] if x[1] and x[2]]
         if not both:
             continue
         K = min(both, key=lambda x: abs(x[0] - r["F"]))[0]
@@ -59,7 +58,7 @@ def build(rows, model):
 def value_next(t, K, call):
     """隔日出場的價值：隔天仍在交易用隔天結算價；隔天就是到期日用最後結算價的內含價值"""
     if t["next"] is not None:
-        v = px(t["next"], K, call)
+        v = px(t["next"], K, call, "sell")
         return v, 1  # 需要再付一次賣出成本
     if t["nextS"] is not None:
         return (max(0.0, t["nextS"] - K) if call else max(0.0, K - t["nextS"])), 0
@@ -73,8 +72,8 @@ def legs_for(t, kind):
         return [(K, True), (K, False)]
     if kind == "strangle":
         d = t["E"] * math.sqrt(t["n"])
-        c = sb.pick(t["row"]["chain"], F + d, True)
-        p = sb.pick(t["row"]["chain"], F - d, False)
+        c = sb.pick(t["row"]["chain"], F + d, True, side="buy")
+        p = sb.pick(t["row"]["chain"], F - d, False, side="buy")
         return [(c[0], True), (p[0], False)] if c and p else None
     if kind == "call":
         return [(K, True)]
@@ -93,7 +92,7 @@ def pnl(t, kind, exit_):
         return None
     total, cost = 0.0, 0.0
     for K, call in lg:
-        p0 = px(t["row"], K, call)
+        p0 = px(t["row"], K, call, "buy")
         if not p0:
             return None
         if exit_ == "hold":
@@ -104,8 +103,8 @@ def pnl(t, kind, exit_):
             if v is None:
                 return None
         total += v - p0
-        cost += COST * (1 + extra)
-    prem = sum(px(t["row"], K, c) for K, c in lg)
+        cost += sb.COST * (1 + extra)
+    prem = sum(px(t["row"], K, c, "buy") for K, c in lg)
     return {"pnl": total - cost, "prem": prem, "ret": (total - cost) / prem if prem else None}
 
 
@@ -178,7 +177,7 @@ def main():
                 oos.append({"exit": ezh, "kind": kzh, "cond": cname, "first": a, "second": b})
     L = ["# 買方策略回測：什麼情況適合買選擇權\n",
          f"期間 {rows[0]['date']} ～ {rows[-1]['date']}，樣本 {len(ts)} 天。每天收盤以結算價買進最近到期的選擇權；"
-         f"每腳每次進出扣 {COST} 點。損益單位：點（1 點 = 50 元）；roi = 平均每筆損益 ÷ 付出的權利金。",
+         f"每腳每次進出扣 {sb.COST} 點。損益單位：點（1 點 = 50 元）；roi = 平均每筆損益 ÷ 付出的權利金。",
          f"權利金貴賤 = 價平跨式價格 ÷（預估波幅 × √持有天數）；便宜 ≤ {lo:.2f}、貴 ≥ {hi:.2f}。\n"]
     for ezh in ("隔日出場", "持有到結算"):
         for _, kzh in kinds:
@@ -212,7 +211,7 @@ def main():
         summ[key] = part
     sp = os.path.join(OUT, "signal.json")
     sig = json.load(open(sp, encoding="utf-8"))
-    sig["_buyer"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "mid": mid, "cost": COST, **summ}
+    sig["_buyer"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "mid": mid, "cost": sb.COST, **summ}
     json.dump(sig, open(sp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     L2 = ["\n## 儀表板採用的買方規則（持有到結算）\n", "| 規則 | 全期 n／平均／t／勝率 | 前段 | 後段 |", "|---|---|---|---|"]
     names = {"straddle": "紅燈＋波動放大 → 買價平跨式", "call": "紅燈＋當日下跌 → 買價平 Call",

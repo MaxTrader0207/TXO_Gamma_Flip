@@ -10,7 +10,8 @@ import math
 import os
 from datetime import date, timedelta
 
-COST = 1.0
+COST = 0.5  # 手續費＋稅；買賣價差已反映在成交價（賣用最後最佳買價、買用最後最佳賣價）
+HOLI = set()
 PATH = os.path.join(os.path.dirname(__file__), "..", "data", "paper.json")
 
 
@@ -38,7 +39,7 @@ def trading_days(d, exp):
     n, x = 0, d
     while x < exp:
         x += timedelta(days=1)
-        if x.weekday() < 5:
+        if x.weekday() < 5 and x not in HOLI:
             n += 1
     return max(1, n)
 
@@ -85,8 +86,9 @@ def update(days, opt, fut, items, tg, model, tiers):
                 led["entries"].append({**base, "status": "skip", "reason": "紅燈不進場"})
                 continue
             D = t["k"] * E * math.sqrt(n)
-            calls = sorted((r[2], r[4]) for r in live if r[0] == code and r[3] == "C" and r[2] >= F + D)
-            puts = sorted(((r[2], r[4]) for r in live if r[0] == code and r[3] == "P" and r[2] <= F - D), reverse=True)
+            calls = sorted((r[2], r[6]) for r in live if r[0] == code and r[3] == "C" and r[2] >= F + D and len(r) > 7 and r[6])
+            puts = sorted(((r[2], r[6]) for r in live if r[0] == code and r[3] == "P" and r[2] <= F - D and len(r) > 7 and r[6]),
+                          reverse=True)
             if not calls or not puts:
                 led["entries"].append({**base, "status": "skip", "reason": "超出報價範圍"})
                 continue
@@ -99,10 +101,12 @@ def update(days, opt, fut, items, tg, model, tiers):
         down = len(seq) >= 2 and seq[-1].get("close") and seq[-2].get("close") and seq[-1]["close"] < seq[-2]["close"]
         Ks = sorted({r[2] for r in live if r[0] == code and r[3] == "C"} & {r[2] for r in live if r[0] == code and r[3] == "P"},
                     key=lambda k: abs(k - F))
+        Ks = [k for k in Ks if any(r[0] == code and r[2] == k and r[3] == "C" and len(r) > 7 and r[7] for r in live)
+              and any(r[0] == code and r[2] == k and r[3] == "P" and len(r) > 7 and r[7] for r in live)]
         if red and Ks:
             K = Ks[0]
-            pc = next(r[4] for r in live if r[0] == code and r[2] == K and r[3] == "C")
-            pp = next(r[4] for r in live if r[0] == code and r[2] == K and r[3] == "P")
+            ask = lambda cp: next((r[7] for r in live if r[0] == code and r[2] == K and r[3] == cp and len(r) > 7), None)  # noqa: E731
+            pc, pp = ask("C"), ask("P")
             base = {"date": ds, "code": code, "exp": exp, "n": n, "F": F, "light": "red", "side": "buy", "status": "open"}
             if expand and (ds, "買方跨式") not in have:
                 led["entries"].append({**base, "tier": "買方跨式", "Kc": K, "pc": pc, "Kp": K, "pp": pp, "debit": round(pc + pp, 1)})
@@ -110,9 +114,9 @@ def update(days, opt, fut, items, tg, model, tiers):
                 led["entries"].append({**base, "tier": "買方Call", "Kc": K, "pc": pc, "debit": round(pc, 1)})
         # 均線跌破（30／60／100MA 近期第一次跌破、均線上揚）→ 買當週價外 1% Call
         if (ds, "均線Call") not in have:
-            ms = tg.ma_status([x.get("close") for x in seq])
+            ms = tg.ma_status(tg.ma_prices(seq))
             if ms["breaks"]:
-                calls = sorted((r[2], r[4]) for r in live if r[0] == code and r[3] == "C" and r[2] >= F * 1.01)
+                calls = sorted((r[2], r[7]) for r in live if r[0] == code and r[3] == "C" and r[2] >= F * 1.01 and len(r) > 7 and r[7])
                 if calls:
                     K, pc = calls[0]
                     led["entries"].append({"date": ds, "code": code, "exp": exp, "n": n, "F": F, "light": "red" if red else "green",
