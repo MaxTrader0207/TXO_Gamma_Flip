@@ -1,0 +1,37 @@
+name: TXO Gamma Flip 長期回測
+# 手動執行：往回抓 N 天的期交所資料逐日計算 GEX／Flip，結果寫到 backtest/（不影響儀表板資料）
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "往回抓幾個日曆天（730 ≈ 2 年）"
+        default: "730"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: txo-data
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: 回測
+        run: python scripts/backtest.py --days "${{ github.event.inputs.days || '730' }}"
+      - name: 提交結果
+        run: |
+          git config user.name "txo-bot"
+          git config user.email "txo-bot@users.noreply.github.com"
+          git pull --rebase -q || true
+          git add backtest
+          git commit -m "backtest: $(TZ=Asia/Taipei date +%F)" || exit 0
+          git push
