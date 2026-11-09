@@ -151,6 +151,9 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
 .ldot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--muted);vertical-align:middle}
 .ldot.red{background:var(--neg)}.ldot.green{background:var(--pos)}
 .paper-note{color:var(--muted);font-size:12px;margin:6px 0 0}
+.expchips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.expchip{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.expchip.soon{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);font-weight:700}
 </style>
 
 <div class="wrap">
@@ -273,6 +276,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
         <li>賣方履約價的回測（2023/11～2026/11）：每天收盤以結算價賣出最近到期的 OTM Call＋Put，持有到結算，每腳扣 1 點成本；履約價距離 = k × 預估波幅 × √持有交易日數，只做綠燈日。標準 k=2.5：516 筆平均每組 +4.0 點、最大回撤約 −490 點；用前段資料估模型、在後段測試 t 約 1.6、回撤約 −1,100 點。保守 k=3.0：全期與樣本外都穩定，但平均權利金只有約 4 點，成本每腳 2 點時幾乎不賺。紅燈日同規則累計虧損；轉紅燈出場、3 倍停損、加保護腳的價差回測都更差。完整結果在 backtest/strategy.md。</li>
+        <li>各區塊標題下方列出每個到期契約的結算日與剩餘天數：「剩 N 天」是從資料日算起的日曆天，「交易日」以週一至週五計算、未扣國定假日；剩 1 個交易日以內會以黃色標示。</li>
         <li>均線跌破的回測（2023/11～2026/11）：台指期收盤近期第一次跌破 30／60／100 日均線（跌破前連續 10 日站上）、且今天的均線高於昨天（均線上揚）時，收盤買當週週選價外 1%。買 Call 持有到結算 18 次、勝率 50%、平均 +368 點（t≈2.3）；買 Put 18 次只贏 1 次、平均 −200 點；隔日就出場平均只有 +54 點。紅燈時跌破買 Call 14 次 8 勝、平均 +488 點，綠燈 4 次只贏 1 次。獲利集中在 2026 年的大多頭（7 次合計 +6,540 點），2024 年每次平均 −76 點、2025 年 +109 點。完整結果在 backtest/ma.md。</li>
         <li>買方的回測（2023/11～2026/11）：每天收盤以結算價買最近到期的選擇權，每腳每次進出扣 1 點成本。只有兩種情況有優勢：(1) 紅燈且近 5 日 ATR 高於 5 個交易日前 → 買價平跨式持有到結算，86 筆勝率 52%、平均 +155 點（後半段較強）；紅燈但波動沒放大、或綠燈時買跨式都不賺。(2) 紅燈且當天下跌 → 買價平 Call 持有到結算，112 筆平均 +184 點，前後兩段都成立；綠燈下跌日買 Call 沒有顯著優勢。(2) 的期間台股大多頭，空頭市場未必成立。買價外勒式、隔日出場、只看權利金便宜，回測都不賺。完整結果在 backtest/buyer.md。</li>
         <li>牆與磁吸的回測（483 日）：隔日收盤落在 Put Wall～Call Wall 之間的比例 57%，和「以現價為中心、同樣寬度的區間」60% 差不多；觸及 Call Wall 後當天收回的只有 33%、Put Wall 31%。最後結算價（由到期日價內選擇權結算價反推）比前一日收盤更靠近「±3% 內最大未平倉」的比例 41%，和隨機價位的 41% 一樣；最大痛點只有 31%。所以牆與最大未平倉只當作「避險量集中的價位」參考，不當成支撐、壓力或磁吸；停損與價差寬度以 ATR 與燈號的預估波幅為準。</li>
@@ -616,6 +620,7 @@ function render(){
     const adv=groupAdvice(g,{gg,w,expInfo},ctx);
     exportStore[g.key]={g,adv,next:expInfo[0]};
     el.innerHTML=`<h3><span>${g.name}</span><span class="tag ${adv.tagCls}">${adv.label}</span></h3>
+      <div class="expchips">${adv.expList.map(x=>`<span class="expchip${x.td<=1?" soon":""}"><b>${x.code}</b> ${x.date}結算｜剩 ${x.cal} 天（${x.td} 個交易日）</span>`).join("")}</div>
       <div class="exbtns small"><button type="button" data-ex="copy" data-g="${g.key}">複製</button><button type="button" data-ex="md" data-g="${g.key}" class="dl">下載 .md</button><button type="button" data-ex="txt" data-g="${g.key}" class="dl">下載 .txt</button></div>
       <div class="summary">
         <b>小結</b>
@@ -821,7 +826,12 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
   if(regime==="pos")verdict=`${flipTxt}，造市商逆勢避險，${turnsNeg?`結算前做區間、結算後改順勢`:`以區間操作為主`}。${roll}`;
   else if(regime==="neg")verdict=`${flipTxt}，造市商順勢避險、波動放大，以順勢為主，${fAll!=null?"反彈到 Flip 前都算弱勢反彈":`整段價格都是負 Gamma，以 Call Wall ${P(callW)} 作為轉強關卡`}。${roll}`;
   else verdict=`${flipTxt}，正負 Gamma 交界，最容易假突破，先等方向。${roll}`;
-  const levels=[["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["最大未平倉 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`],[atrReal?"近 5 日 ATR":"ATR（估）",`${fmt(r10(A),0)} 點｜停損 ${fmt(half,0)}／價差寬 ${fmt(width,0)}`]];
+  // 每個到期的結算日與剩餘天數（日曆天、交易日）
+  const expList=expInfo.map(e=>{const v=new Date(e.exp.getTime()+13.5*36e5-e.days*864e5);
+    const cal=Math.max(0,Math.round((new Date(e.exp.getFullYear(),e.exp.getMonth(),e.exp.getDate())-new Date(v.getFullYear(),v.getMonth(),v.getDate()))/864e5));
+    return {code:e.code,date:`${e.exp.getMonth()+1}/${e.exp.getDate()}（${"日一二三四五六"[e.exp.getDay()]}）`,cal,td:tradingDaysTo(v,e.exp)};});
+  const expTxt=expList.map(x=>`${x.code} ${x.date}結算，剩 ${x.cal} 天（${x.td} 個交易日）`).join("；");
+  const levels=[["到期結算",expTxt],["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["最大未平倉 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`],[atrReal?"近 5 日 ATR":"ATR（估）",`${fmt(r10(A),0)} 點｜停損 ${fmt(half,0)}／價差寬 ${fmt(width,0)}`]];
   // 4. 具體操作：期貨價位（四捨五入到 10 點）＋本區塊最近到期的選擇權組合（以結算價估算）
   const plan=[];
   const W2=width;
@@ -862,7 +872,7 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
   if(turnsPos)plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：負 Gamma 部位退場，空單逢低回補，若站穩 ${P(fPost)} 改回區間思維。`);
   if(expiring)plan.push(`結算日提醒：${next.code} 剩 ${next.days.toFixed(1)} 天，結算前價格容易被 ${P(next.pin)} 吸住；最後結算價取 13:00～13:30 平均，結算日午盤不宜逆勢押注價平。`);
   plan.push(contrib);
-  return {regime,label,tagCls,verdict,levels,plan,fPost,gPost,next,sT,share,turnsNeg,turnsPos};
+  return {regime,label,tagCls,verdict,levels,plan,fPost,gPost,next,sT,share,turnsNeg,turnsPos,expList};
 }
 
 /* ---------- history ---------- */

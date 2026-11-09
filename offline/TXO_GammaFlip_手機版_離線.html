@@ -155,6 +155,9 @@ table.mini th,table.mini td{padding:4px 6px;border-bottom:1px solid var(--line);
 table.mini th{color:var(--muted);font-weight:500}
 .tablewrap{overflow-x:auto;margin-bottom:8px}
 .muted{color:var(--muted)}
+.expchips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.expchip{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.expchip.soon{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);font-weight:700}
 </style>
 
 <header class="bar">
@@ -501,7 +504,12 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
   if(regime==="pos")verdict=`${flipTxt}，造市商逆勢避險，${turnsNeg?`結算前做區間、結算後改順勢`:`以區間操作為主`}。${roll}`;
   else if(regime==="neg")verdict=`${flipTxt}，造市商順勢避險、波動放大，以順勢為主，${fAll!=null?"反彈到 Flip 前都算弱勢反彈":`整段價格都是負 Gamma，以 Call Wall ${P(callW)} 作為轉強關卡`}。${roll}`;
   else verdict=`${flipTxt}，正負 Gamma 交界，最容易假突破，先等方向。${roll}`;
-  const levels=[["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["最大未平倉 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`],[atrReal?"近 5 日 ATR":"ATR（估）",`${fmt(r10(A),0)} 點｜停損 ${fmt(half,0)}／價差寬 ${fmt(width,0)}`]];
+  // 每個到期的結算日與剩餘天數（日曆天、交易日）
+  const expList=expInfo.map(e=>{const v=new Date(e.exp.getTime()+13.5*36e5-e.days*864e5);
+    const cal=Math.max(0,Math.round((new Date(e.exp.getFullYear(),e.exp.getMonth(),e.exp.getDate())-new Date(v.getFullYear(),v.getMonth(),v.getDate()))/864e5));
+    return {code:e.code,date:`${e.exp.getMonth()+1}/${e.exp.getDate()}（${"日一二三四五六"[e.exp.getDay()]}）`,cal,td:tradingDaysTo(v,e.exp)};});
+  const expTxt=expList.map(x=>`${x.code} ${x.date}結算，剩 ${x.cal} 天（${x.td} 個交易日）`).join("；");
+  const levels=[["到期結算",expTxt],["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["最大未平倉 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`],[atrReal?"近 5 日 ATR":"ATR（估）",`${fmt(r10(A),0)} 點｜停損 ${fmt(half,0)}／價差寬 ${fmt(width,0)}`]];
   // 4. 具體操作：期貨價位（四捨五入到 10 點）＋本區塊最近到期的選擇權組合（以結算價估算）
   const plan=[];
   const W2=width;
@@ -542,7 +550,7 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
   if(turnsPos)plan.push(`結算後（${fmtD(next.exp).slice(5)} 收盤起）：負 Gamma 部位退場，空單逢低回補，若站穩 ${P(fPost)} 改回區間思維。`);
   if(expiring)plan.push(`結算日提醒：${next.code} 剩 ${next.days.toFixed(1)} 天，結算前價格容易被 ${P(next.pin)} 吸住；最後結算價取 13:00～13:30 平均，結算日午盤不宜逆勢押注價平。`);
   plan.push(contrib);
-  return {regime,label,tagCls,verdict,levels,plan,fPost,gPost,next,sT,share,turnsNeg,turnsPos};
+  return {regime,label,tagCls,verdict,levels,plan,fPost,gPost,next,sT,share,turnsNeg,turnsPos,expList};
 }
 
 
@@ -651,6 +659,7 @@ function renderBlock(){
   const {g,adv}=B;
   const bold=t=>t.replace(/^([^：]{2,12})：/,"<b>$1</b>：");
   body.innerHTML=`<h2>${g.name} <span class="tag ${adv.tagCls}">${adv.label}</span></h2>
+    <div class="expchips">${(adv.expList||[]).map(x=>`<span class="expchip${x.td<=1?" soon":""}"><b>${x.code}</b> ${x.date}結算｜剩 ${x.cal} 天（${x.td} 個交易日）</span>`).join("")}</div>
     <p class="verdict">${adv.verdict}</p>
     <dl class="lv">${adv.levels.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
     <h2>具體操作</h2>

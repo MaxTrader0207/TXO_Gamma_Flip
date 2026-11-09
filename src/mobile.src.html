@@ -141,6 +141,9 @@ table.mini th,table.mini td{padding:4px 6px;border-bottom:1px solid var(--line);
 table.mini th{color:var(--muted);font-weight:500}
 .tablewrap{overflow-x:auto;margin-bottom:8px}
 .muted{color:var(--muted)}
+.expchips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.expchip{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.expchip.soon{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);font-weight:700}
 </style>
 
 <header class="bar">
@@ -348,6 +351,7 @@ function renderBlock(){
   const {g,adv}=B;
   const bold=t=>t.replace(/^([^：]{2,12})：/,"<b>$1</b>：");
   body.innerHTML=`<h2>${g.name} <span class="tag ${adv.tagCls}">${adv.label}</span></h2>
+    <div class="expchips">${(adv.expList||[]).map(x=>`<span class="expchip${x.td<=1?" soon":""}"><b>${x.code}</b> ${x.date}結算｜剩 ${x.cal} 天（${x.td} 個交易日）</span>`).join("")}</div>
     <p class="verdict">${adv.verdict}</p>
     <dl class="lv">${adv.levels.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
     <h2>具體操作</h2>
