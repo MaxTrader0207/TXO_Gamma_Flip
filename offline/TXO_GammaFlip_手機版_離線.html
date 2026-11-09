@@ -416,7 +416,7 @@ function btBuyHtml(bt,F,rows,val){
   const why=`今天${red?"紅燈":"綠燈"}、近 5 日 ATR ${bt.expand==null?"—":exp?"放大中":"沒有放大"}、當日${bt.ret==null?"—":(bt.ret>=0?"上漲 ":"下跌 ")+Math.abs(bt.ret).toFixed(2)+"%"}`;
   const none=`<span>回測條件不成立，<b>不做買方</b>。對照：其他日子買價平跨式 ${st(B.straddleOther.full)}；綠燈下跌日買 Call ${st(B.callGreenDown.full)}；買價外勒式 ${st(B.otm.full)}。</span>`;
   return `<div class="bt-sell bt-buy"><div><b>買方條件（回測）</b>：${why}。</div>${ideas.length?`<ul class="bt-tiers">${ideas.join("")}</ul>`:none}
-<span class="bt-src">買方只在紅燈時有優勢：紅燈且波動放大時實際波動常大於權利金隱含的波動，跨式賺錢；紅燈當天下跌後常有反彈，但這段期間台股大多頭，買 Call 的結果有多頭行情加持。價外勒式幾乎都賠，隔日就出場也比持有到結算差。</span></div>`;
+<span class="bt-src">5 年回測（含 2022 空頭年）下，買價平跨式扣掉買賣價差後已不顯著；紅燈下跌買 Call 仍為正，但 2022 年是虧損的。買方只在紅燈時有機會：紅燈且波動放大時實際波動常大於權利金隱含的波動，跨式賺錢；紅燈當天下跌後常有反彈，但這段期間台股大多頭，買 Call 的結果有多頭行情加持。價外勒式幾乎都賠，隔日就出場也比持有到結算差。</span></div>`;
 }
 
 /* 均線跌破（回測）：30／60／100MA 近期第一次跌破且均線上揚 → 買當週價外 1% Call；買 Put 回測虧損 */
