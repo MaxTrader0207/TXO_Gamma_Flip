@@ -369,8 +369,15 @@ def attach_signal(latest, seq):
     s = latest["summary"]["naive"]
     pct = gex_pct(vals, s["gex"])
     b = bt_bucket(latest["F"], s["flip"], s["gex"])
+    # 買方條件：近 5 日 ATR 是否高於 5 個交易日前（波動放大）、當日漲跌
+    past = [it for it in seq if it["date"] <= d]
+    expand = ret = None
+    if len(past) >= 6 and past[-1].get("atr5") and past[-6].get("atr5"):
+        expand = past[-1]["atr5"] > past[-6]["atr5"]
+    if len(past) >= 2 and past[-1].get("close") and past[-2].get("close"):
+        ret = round((past[-1]["close"] / past[-2]["close"] - 1) * 100, 2)
     return {"bucket": b, "label": BT_LABELS[b], "flip": s["flip"], "gex": s["gex"],
-            "pct": round(pct, 3) if pct is not None else None, "stats": table}
+            "pct": round(pct, 3) if pct is not None else None, "expand": expand, "ret": ret, "stats": table}
 
 
 # ---------------- main ----------------

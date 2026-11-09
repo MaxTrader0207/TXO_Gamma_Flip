@@ -229,7 +229,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
   </section>
 
   <section id="paperPanel" class="panel" hidden>
-    <div class="head"><h2>模擬帳本：賣方規則的實際追蹤</h2></div>
+    <div class="head"><h2>模擬帳本：賣方與買方規則的實際追蹤</h2></div>
     <div id="paperBody"></div>
   </section>
 
@@ -259,6 +259,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
         <li>賣方履約價的回測：每天收盤以結算價賣出最近到期的 OTM Call＋Put，持有到結算，每腳扣 1 點成本；履約價距離 = k × 預估波幅 × √持有交易日數，只做綠燈日。分兩級：標準 k=2.5（全期 336 筆平均每組 +5 點、最大回撤約 −290 點；但用前一年資料估模型、在後一年測試時 t 只有約 1、回撤近千點）；保守 k=3.0（全期與樣本外都穩定，最大回撤個位數，但平均權利金只有約 5 點，成本加到每腳 2 點時幾乎不賺）。k=1.5 或不乘 √天數會賠錢；紅燈日同規則累計虧損；持有期間轉紅燈出場、權利金 3 倍停損、加保護腳的價差，回測都更差。深價外的實際買賣價差可能大於 1 點，請以實際報價調整。完整結果在 backtest/strategy.md。</li>
+        <li>買方的回測：每天收盤以結算價買最近到期的選擇權，每腳每次進出扣 1 點成本。只有兩種情況有優勢，而且前後兩段資料都成立：(1) 紅燈且近 5 日 ATR 高於 5 個交易日前 → 買價平跨式持有到結算，63 筆勝率 56%、平均 +214 點；紅燈但波動沒放大、或綠燈時買跨式都不賺。(2) 紅燈且當天下跌 → 買價平 Call 持有到結算，83 筆平均 +207 點；綠燈下跌日買 Call 沒有顯著優勢。注意 (2) 的期間台股大多頭，同樣日子做多期貨平均也賺 336 點，空頭市場未必成立。買價外勒式、隔日出場、只看權利金便宜，回測都不賺。完整結果在 backtest/buyer.md。</li>
         <li>牆與磁吸的回測（483 日）：隔日收盤落在 Put Wall～Call Wall 之間的比例 57%，和「以現價為中心、同樣寬度的區間」60% 差不多；觸及 Call Wall 後當天收回的只有 33%、Put Wall 31%。最後結算價（由到期日價內選擇權結算價反推）比前一日收盤更靠近「±3% 內最大未平倉」的比例 41%，和隨機價位的 41% 一樣；最大痛點只有 31%。所以牆與最大未平倉只當作「避險量集中的價位」參考，不當成支撐、壓力或磁吸；停損與價差寬度以 ATR 與燈號的預估波幅為準。</li>
         <li>回測燈號：依當日收盤是否在「Call 多、Put 空」合併 Flip 之下分紅／綠兩級（找不到 Flip 時看總 GEX 正負）。回測發現 Flip 之上不論距離遠近、GEX 百分位高低，隔日波動差異都不大，所以不另設黃燈。預估明日波幅來自回測的迴歸：隔日真實波幅% ＝ 基準 ＋ 係數 × 近 5 日 ATR% ＋ 紅燈加成，每次重跑回測會自動更新係數。</li>
         <li>方向假設預設採「Call 多、Put 空」。2024/11～2026/11 共 483 個交易日的回測：期貨收在此假設的 Flip 之下時，隔日真實波幅平均 2.43%、漲跌 ≥1.5% 的機率 37%；在 Flip 之上時為 1.78%、24%。扣除「近 5 日 ATR」本身的波動延續效果後，Flip 之下仍多出約 0.7 個百分點（t≈3.4），是統計上站得住的訊號。「自營商實際淨部位」以期交所三大法人的自營商 Call、Put 淨未平倉比例當方向權重，但它約 8 成的日子算不出 Flip，扣除 ATR 效果後也沒有額外預測力，所以保留作參考對照。完整回測在 repo 的 backtest/ 資料夾。</li>
@@ -429,7 +430,7 @@ function btHtml(bt,F,atr,rows,val){
     :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
   return `<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
 <p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
-${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}
+${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt,F,rows,val)}
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
 }
 
@@ -457,18 +458,40 @@ function btSellHtml(bt,F,atr,rows,val){
   return `<div class="bt-sell"><div>${head}</div><ul class="bt-tiers">${li}</ul><span class="bt-src">標準級收得多但樣本外不穩（曾回撤近千點）；保守級樣本外穩定，但權利金只有約 5 點，成本稍高就幾乎不賺。持有期間轉紅燈出場或 3 倍停損，回測反而更差。</span></div>`;
 }
 
+/* 買方條件（回測）：紅燈＋波動放大 → 價平跨式；紅燈＋當日下跌 → 價平 Call；都持有到結算 */
+function btBuyHtml(bt,F,rows,val){
+  const B=bt.stats&&bt.stats._buyer;if(!B||!rows||!rows.length||!val)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),p0=v=>Math.round(v*100)+"%";
+  const st=s=>s?`${s.n} 筆、勝率 ${p0(s.win)}、平均 ${s.avg>=0?"+":""}${n0(s.avg)} 點（t≈${f1(s.t)}）`:"—";
+  const halves=x=>x.first&&x.second?`；前後兩段各 ${x.first.avg>=0?"+":""}${n0(x.first.avg)}／${x.second.avg>=0?"+":""}${n0(x.second.avg)} 點`:"";
+  const red=bt.bucket==="red",exp=bt.expand===true,down=bt.ret!=null&&bt.ret<0;
+  const live=rows.filter(x=>x.exp>val);if(!live.length)return "";
+  const e=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+e).code;
+  const ch=live.filter(x=>x.code===code&&isFinite(x.px)&&x.px>0);
+  const Ks=[...new Set(ch.map(x=>x.K))].filter(K=>ch.some(x=>x.K===K&&x.isCall)&&ch.some(x=>x.K===K&&!x.isCall));
+  const K=Ks.length?Ks.reduce((a,k)=>Math.abs(k-F)<Math.abs(a-F)?k:a,Ks[0]):null;
+  const c=K!=null?ch.find(x=>x.K===K&&x.isCall):null,p=K!=null?ch.find(x=>x.K===K&&!x.isCall):null;
+  const ds=`${e.getMonth()+1}/${e.getDate()}`,ideas=[];
+  if(red&&exp&&c&&p)ideas.push(`<li><b>買價平跨式</b>：${code}（${ds} 結算）買 ${n0(K)} Call（${f1(c.px)}）＋ ${n0(K)} Put（${f1(p.px)}），共 ${f1(c.px+p.px)} 點，持有到結算。回測：${st(B.straddle.full)}${halves(B.straddle)}</li>`);
+  if(red&&down&&c)ideas.push(`<li><b>買價平 Call（跌深反彈）</b>：${code} 買 ${n0(K)} Call（${f1(c.px)}），持有到結算。回測：${st(B.call.full)}${halves(B.call)}</li>`);
+  const why=`今天${red?"紅燈":"綠燈"}、近 5 日 ATR ${bt.expand==null?"—":exp?"放大中":"沒有放大"}、當日${bt.ret==null?"—":(bt.ret>=0?"上漲 ":"下跌 ")+Math.abs(bt.ret).toFixed(2)+"%"}`;
+  const none=`<span>回測條件不成立，<b>不做買方</b>。對照：其他日子買價平跨式 ${st(B.straddleOther.full)}；綠燈下跌日買 Call ${st(B.callGreenDown.full)}；買價外勒式 ${st(B.otm.full)}。</span>`;
+  return `<div class="bt-sell bt-buy"><div><b>買方條件（回測）</b>：${why}。</div>${ideas.length?`<ul class="bt-tiers">${ideas.join("")}</ul>`:none}
+<span class="bt-src">買方只在紅燈時有優勢：紅燈且波動放大時實際波動常大於權利金隱含的波動，跨式賺錢；紅燈當天下跌後常有反彈，但這段期間台股大多頭，買 Call 的結果有多頭行情加持。價外勒式幾乎都賠，隔日就出場也比持有到結算差。</span></div>`;
+}
+
 /* 模擬帳本：管線每天依回測規則記錄的賣方部位（到期後以最後結算價算損益） */
 function paperHtml(pp,lim){
   if(!pp||!pp.tiers||!pp.tiers.length)return "";
   const n0=v=>v==null?"—":Math.round(v).toLocaleString("zh-TW"),f1=v=>v==null?"—":(+v).toFixed(1),sg=v=>v==null?"—":(v>=0?"+":"")+(+v).toFixed(1);
-  const sum=pp.tiers.map(t=>`<tr><td>${t.name}（k=${t.k}）</td><td>${t.days}</td><td>${t.traded}</td><td>${t.skipRed}／${t.skipRange}</td><td>${t.closed}／${t.open}</td><td class="${t.total>=0?"pnl-pos":"pnl-neg"}">${sg(t.total)}</td><td>${t.win==null?"—":Math.round(t.win*100)+"%"}</td><td>${f1(t.worst)}</td></tr>`).join("");
+  const sum=pp.tiers.map(t=>`<tr><td>${t.k==null?t.name:`${t.name}（k=${t.k}）`}</td><td>${t.days}</td><td>${t.traded}</td><td>${t.skipRed}／${t.skipRange}</td><td>${t.closed}／${t.open}</td><td class="${t.total>=0?"pnl-pos":"pnl-neg"}">${sg(t.total)}</td><td>${t.win==null?"—":Math.round(t.win*100)+"%"}</td><td>${f1(t.worst)}</td></tr>`).join("");
   const rec=(pp.recent||[]).slice().reverse().slice(0,lim||40).map(e=>{
     const st=e.status==="skip"?`<span class="muted">${e.reason}</span>`:e.status==="open"?"持有中":`結算 ${e.approx?"≈":""}${n0(e.S)}`;
-    const legs=e.Kc?`${n0(e.Kc)}C ${f1(e.pc)}／${n0(e.Kp)}P ${f1(e.pp)}`:"—";
+    const legs=(e.side==="buy"?"買 ":"")+([e.Kc?`${n0(e.Kc)}C ${f1(e.pc)}`:"",e.Kp?`${n0(e.Kp)}P ${f1(e.pp)}`:""].filter(Boolean).join("／")||"—");
     const pnl=e.status==="closed"?`<span class="${e.pnl>=0?"pnl-pos":"pnl-neg"}">${sg(e.pnl)}</span>`:"";
     return `<tr><td>${e.date.slice(5).replace("-","/")}</td><td><span class="ldot ${e.light}"></span>${e.tier}</td><td>${e.code}</td><td>${legs}</td><td>${st}</td><td>${pnl}</td></tr>`;}).join("");
   return `<div class="tablewrap"><table class="mini paper"><thead><tr><th>級別</th><th>天數</th><th>進場</th><th>不進場（紅燈／超範圍）</th><th>已結算／持有中</th><th>累計（點）</th><th>勝率</th><th>最大單筆</th></tr></thead><tbody>${sum}</tbody></table></div>
-<div class="tablewrap"><table class="mini paper"><thead><tr><th>日期</th><th>燈號｜級別</th><th>契約</th><th>賣出履約價（結算價）</th><th>狀態</th><th>損益</th></tr></thead><tbody>${rec}</tbody></table></div>
+<div class="tablewrap"><table class="mini paper"><thead><tr><th>日期</th><th>燈號｜級別</th><th>契約</th><th>履約價（結算價）</th><th>狀態</th><th>損益</th></tr></thead><tbody>${rec}</tbody></table></div>
 <p class="paper-note">自 ${pp.start||"—"} 起每天收盤自動記錄，以當日結算價成交、每腳扣 ${pp.cost} 點成本，不是實際下單。損益單位為點（1 點＝50 元）；「≈」表示到期日資料缺漏，以下一個交易日的台指期收盤近似結算價。</p>`;
 }
 

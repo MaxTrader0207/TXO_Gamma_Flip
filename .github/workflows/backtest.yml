@@ -29,6 +29,7 @@ jobs:
         run: |
           python scripts/backtest.py --days "${{ github.event.inputs.days || '730' }}"
           python scripts/strategy_bt.py
+          python scripts/buyer_bt.py
       - name: 提交結果
         run: |
           git config user.name "txo-bot"
