@@ -129,6 +129,7 @@ body.nodl .dl{display:none}
 .btlight.green .bt-dot{background:var(--pos);box-shadow:0 0 0 4px color-mix(in srgb,var(--pos) 22%,transparent)}
 .btlight.red .bt-head b{color:var(--neg)}.btlight.green .bt-head b{color:var(--pos)}
 .bt-why{color:var(--muted);font-size:13px}
+.bt-sell{border-top:1px dashed var(--line);padding-top:6px}.bt-sell.no b:last-of-type{color:var(--neg)}
 .bt-src{color:var(--muted);font-size:12px}
 </style>
 
@@ -308,7 +309,7 @@ function walls(rows,S,r){
 }
 
 /* 回測燈號：以每日收盤資料、「Call 多、Put 空」、全部到期計算（與 scripts/backtest.py 同一套定義），不隨頁面上的勾選與方向切換改變 */
-function btHtml(bt,F,atr){
+function btHtml(bt,F,atr,rows,val){
   if(!bt||!bt.stats||!bt.stats[bt.bucket])return "";
   const n0=v=>Math.round(v).toLocaleString("zh-TW"),p1=v=>(v*100).toFixed(0)+"%",f2=v=>(+v).toFixed(2);
   const s=bt.stats[bt.bucket],m=bt.stats._model,meta=bt.stats._meta||{},red=bt.bucket==="red";
@@ -322,8 +323,29 @@ function btHtml(bt,F,atr){
     :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
   return `<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
 <p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
-${est}<p class="bt-tip">${tip}</p>
+${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
+}
+
+/* 賣方履約價（回測規則）：最近到期、履約價距離 = k × 預估波幅 × √持有交易日數，只在綠燈日做 */
+function tradingDaysTo(val,exp){let n=0;const d=new Date(val.getFullYear(),val.getMonth(),val.getDate());
+  while(d<exp){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6&&d<=exp)n++;}return Math.max(1,n);}
+function btSellHtml(bt,F,atr,rows,val){
+  const st=bt.stats&&bt.stats._strategy,m=bt.stats&&bt.stats._model;
+  if(!st||!st.green||!m||!atr||!F||!rows||!rows.length||!val)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),p0=v=>Math.round(v*100)+"%",red=bt.bucket==="red";
+  const live=rows.filter(x=>x.exp>val);if(!live.length)return "";
+  const exp=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+exp).code;
+  const ch=live.filter(x=>x.code===code&&isFinite(x.px)&&x.px>0),n=tradingDaysTo(val,exp);
+  const E=(m.a+m.b*atr/F*100+(red?m.c:0))/100*F,D=st.k*E*Math.sqrt(n);
+  const c=ch.filter(x=>x.isCall&&x.K>=F+D).sort((a,b)=>a.K-b.K)[0],p=ch.filter(x=>!x.isCall&&x.K<=F-D).sort((a,b)=>b.K-a.K)[0];
+  const g=st.green,r=st.red,ds=`${exp.getMonth()+1}/${exp.getDate()}`;
+  const legs=c&&p?`賣 Call <b>${n0(c.K)}</b>（結算價 ${f1(c.px)}）＋ 賣 Put <b>${n0(p.K)}</b>（${f1(p.px)}），合計約 ${f1(c.px+p.px)} 點`:`距離超出有報價的履約價範圍（目前波動太大），依規則<b>今天不進場</b>；回測中這類日子同樣沒有交易`;
+  const head=`<b>賣方履約價（回測規則）</b>：${code}（${ds} 結算，剩 ${n} 個交易日），距離 ${st.k} × 預估波幅 × √${n} ≈ ±${n0(D)} 點`;
+  const stat=`回測綠燈日 ${g.n} 筆：勝率 ${p0(g.win)}、平均 ${g.avg>=0?"+":""}${f1(g.avg)} 點、最大單筆 ${n0(g.worst)} 點、最大回撤 ${n0(g.dd)} 點（t≈${(+g.t).toFixed(1)}，每腳已扣 ${st.cost} 點成本）`;
+  const redTxt=r?`紅燈日同規則 ${r.n} 筆累計 ${n0(r.total)} 點、最大單筆 ${n0(r.worst)} 點`:"";
+  return red?`<p class="bt-sell no">${head}。<b>今天是紅燈，回測不做賣方</b>：${redTxt}。若一定要做，改成有保護腳的價差並減少口數。</p>`
+    :`<p class="bt-sell">${head}：${legs}。${stat}。${r?`對照：${redTxt}，所以紅燈日不進場。`:""}</p>`;
 }
 
 /* 燈號實績：用每日歷史（Call 多、Put 空的合併 Flip）回看每個燈號隔日的實際波動 */
@@ -473,7 +495,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
-  {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
+  {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr,state.rows,state.val);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
   {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
    $("hDealer").textContent=d&&w?`自營商淨部位：Call ${f(d.C?.net)} 口（${pc(w[0])}）／Put ${f(d.P?.net)} 口（${pc(w[1])}）${$("signMode").value==="dealer"?"，已用來校正方向":""}`:"";}

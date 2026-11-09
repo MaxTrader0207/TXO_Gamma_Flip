@@ -129,6 +129,7 @@ body.nodl .dl{display:none}
 .btlight.green .bt-dot{background:var(--pos);box-shadow:0 0 0 4px color-mix(in srgb,var(--pos) 22%,transparent)}
 .btlight.red .bt-head b{color:var(--neg)}.btlight.green .bt-head b{color:var(--pos)}
 .bt-why{color:var(--muted);font-size:13px}
+.bt-sell{border-top:1px dashed var(--line);padding-top:6px}.bt-sell.no b:last-of-type{color:var(--neg)}
 .bt-src{color:var(--muted);font-size:12px}
 </style>
 
@@ -264,7 +265,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
-  {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
+  {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr,state.rows,state.val);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
   {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
    $("hDealer").textContent=d&&w?`自營商淨部位：Call ${f(d.C?.net)} 口（${pc(w[0])}）／Put ${f(d.P?.net)} 口（${pc(w[1])}）${$("signMode").value==="dealer"?"，已用來校正方向":""}`:"";}

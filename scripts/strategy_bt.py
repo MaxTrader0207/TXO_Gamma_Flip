@@ -171,6 +171,34 @@ def main():
                "cost": COST, "model": model, "results": js},
               open(os.path.join(OUT, "strategy.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("\n".join(L))
+    # 儀表板採用的規則：綠燈日、最近到期勒式、k=2.5（回測最穩定）；附上 k=2.0 與紅燈日對照
+    def detail(k, filt):
+        p = []
+        for t in ts:
+            if not filt(t):
+                continue
+            d = k * t["E"] * sq(t)
+            a, b = leg(t, d, True), leg(t, d, False)
+            if a and b:
+                p.append((a["pnl"] + b["pnl"], a["credit"] + b["credit"]))
+        if len(p) < 20:
+            return None
+        v = [x[0] for x in p]
+        eq = pk = dd = 0
+        for x in v:
+            eq += x
+            pk = max(pk, eq)
+            dd = min(dd, eq - pk)
+        return {"k": k, "n": len(v), "win": round(sum(1 for x in v if x > 0) / len(v), 3), "avg": round(st.mean(v), 2),
+                "total": round(sum(v), 1), "worst": round(min(v), 1), "dd": round(dd, 1),
+                "t": round(st.mean(v) / (st.stdev(v) / math.sqrt(len(v))), 2), "credit": round(st.mean(x[1] for x in p), 1)}
+    sp = os.path.join(OUT, "signal.json")
+    sig = json.load(open(sp, encoding="utf-8"))
+    sig["_strategy"] = {"k": 2.5, "cost": COST, "from": rows[0]["date"], "to": rows[-1]["date"],
+                        "green": detail(2.5, lambda t: not t["red"]), "green2": detail(2.0, lambda t: not t["red"]),
+                        "red": detail(2.5, lambda t: t["red"])}
+    json.dump(sig, open(sp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(sig["_strategy"])
 
 
 if __name__ == "__main__":
