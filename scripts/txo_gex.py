@@ -382,7 +382,7 @@ def main():
     start = today - timedelta(days=a.days)
     opt, fut = {}, {}
     for txt in download_range(OPT_URL, "TXO", start, today):
-        opt.update(parse_options(txt))
+        opt.update(parse_options(txt, keep_zero_oi=True))
     for txt in download_range(FUT_URL, "TX", start, today):
         fut.update(parse_futures(txt))
     inst = {}
@@ -414,7 +414,7 @@ def main():
         fcode, F = fut[d][:2]
         o, h, l, c = fut[d][2:]
         val = datetime(d.year, d.month, d.day, 13, 45, tzinfo=TPE)
-        live = [r for r in opt[d] if date.fromisoformat(r[1]) > d]
+        live = [r for r in opt[d] if date.fromisoformat(r[1]) > d and r[5] > 0]
         # 每個到期的完整未平倉（含 ±15% 以外的履約價），供頁面顯示；Gamma 計算仍只用 ±15% 內
         oi_tot = {}
         for r in live:
@@ -461,6 +461,15 @@ def main():
         latest["atr5"] = it.get("atr5")
         latest["ohlc"] = [it.get(k) for k in ("open", "high", "low", "close")]
         latest["btSignal"] = attach_signal(latest, seq)
+        try:
+            import paper
+            sig = (latest["btSignal"] or {}).get("stats") or {}
+            st_ = sig.get("_strategy") or {}
+            tiers = [{"name": t["name"], "k": t["k"]} for t in st_.get("tiers", [])]
+            if sig.get("_model") and tiers:
+                latest["paper"] = paper.update(days, opt, fut, items, sys.modules[__name__], sig["_model"], tiers)
+        except Exception as ex:  # noqa: BLE001
+            print("模擬帳本更新失敗：", ex)
         json.dump(latest, open(os.path.join(DATA, "latest.json"), "w", encoding="utf-8"),
                   ensure_ascii=False, separators=(",", ":"))
     hist["items"] = sorted(items.values(), key=lambda x: x["date"])[-250:]
