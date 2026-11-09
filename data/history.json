@@ -13,7 +13,8 @@
 "dealer_gex": 6.997,
 "dealer_flip": null,
 "dealer_wc": 0.0154,
-"dealer_wp": 0.0807
+"dealer_wp": 0.0807,
+"tr": 212.0
 },
 {
 "date": "2025-10-28",
@@ -28,7 +29,8 @@
 "dealer_gex": 24.508,
 "dealer_flip": null,
 "dealer_wc": 0.0298,
-"dealer_wp": 0.1022
+"dealer_wp": 0.1022,
+"tr": 266.0
 },
 {
 "date": "2025-10-29",
@@ -43,7 +45,8 @@
 "dealer_gex": 13.625,
 "dealer_flip": null,
 "dealer_wc": 0.0963,
-"dealer_wp": 0.15
+"dealer_wp": 0.15,
+"tr": 444.0
 },
 {
 "date": "2025-10-30",
@@ -58,7 +61,8 @@
 "dealer_gex": 24.615,
 "dealer_flip": null,
 "dealer_wc": 0.0727,
-"dealer_wp": 0.0901
+"dealer_wp": 0.0901,
+"tr": 371.0
 },
 {
 "date": "2025-10-31",
@@ -73,7 +77,9 @@
 "dealer_gex": 4.419,
 "dealer_flip": null,
 "dealer_wc": 0.0019,
-"dealer_wp": 0.0697
+"dealer_wp": 0.0697,
+"tr": 210.0,
+"atr5": 300.6
 },
 {
 "date": "2025-11-03",
@@ -88,7 +94,9 @@
 "dealer_gex": 17.374,
 "dealer_flip": null,
 "dealer_wc": -0.0063,
-"dealer_wp": 0.1393
+"dealer_wp": 0.1393,
+"tr": 354.0,
+"atr5": 329.0
 },
 {
 "date": "2025-11-04",
@@ -103,7 +111,9 @@
 "dealer_gex": 16.283,
 "dealer_flip": 28946.1,
 "dealer_wc": -0.0101,
-"dealer_wp": 0.0765
+"dealer_wp": 0.0765,
+"tr": 481.0,
+"atr5": 372.0
 },
 {
 "date": "2025-11-05",
@@ -118,7 +128,9 @@
 "dealer_gex": 10.964,
 "dealer_flip": null,
 "dealer_wc": 0.0043,
-"dealer_wp": 0.1893
+"dealer_wp": 0.1893,
+"tr": 702.0,
+"atr5": 423.6
 },
 {
 "date": "2025-11-06",
@@ -133,7 +145,9 @@
 "dealer_gex": 24.09,
 "dealer_flip": null,
 "dealer_wc": 0.0543,
-"dealer_wp": 0.1018
+"dealer_wp": 0.1018,
+"tr": 336.0,
+"atr5": 416.6
 },
 {
 "date": "2025-11-07",
@@ -148,7 +162,9 @@
 "dealer_gex": 10.118,
 "dealer_flip": null,
 "dealer_wc": 0.0201,
-"dealer_wp": 0.1218
+"dealer_wp": 0.1218,
+"tr": 438.0,
+"atr5": 462.2
 },
 {
 "date": "2025-11-10",
@@ -163,7 +179,9 @@
 "dealer_gex": 24.612,
 "dealer_flip": null,
 "dealer_wc": 0.063,
-"dealer_wp": 0.1014
+"dealer_wp": 0.1014,
+"tr": 321.0,
+"atr5": 455.6
 },
 {
 "date": "2025-11-11",
@@ -178,7 +196,9 @@
 "dealer_gex": 24.063,
 "dealer_flip": null,
 "dealer_wc": 0.0187,
-"dealer_wp": 0.1014
+"dealer_wp": 0.1014,
+"tr": 418.0,
+"atr5": 443.0
 },
 {
 "date": "2025-11-12",
@@ -193,7 +213,9 @@
 "dealer_gex": 6.615,
 "dealer_flip": null,
 "dealer_wc": 0.0037,
-"dealer_wp": 0.0894
+"dealer_wp": 0.0894,
+"tr": 298.0,
+"atr5": 362.2
 },
 {
 "date": "2025-11-13",
@@ -208,7 +230,9 @@
 "dealer_gex": 13.137,
 "dealer_flip": 28258.9,
 "dealer_wc": -0.0461,
-"dealer_wp": 0.1183
+"dealer_wp": 0.1183,
+"tr": 252.0,
+"atr5": 345.4
 },
 {
 "date": "2025-11-14",
@@ -223,7 +247,9 @@
 "dealer_gex": 12.017,
 "dealer_flip": null,
 "dealer_wc": 0.0042,
-"dealer_wp": 0.1401
+"dealer_wp": 0.1401,
+"tr": 614.0,
+"atr5": 380.6
 },
 {
 "date": "2025-11-17",
@@ -238,7 +264,9 @@
 "dealer_gex": 24.971,
 "dealer_flip": null,
 "dealer_wc": 0.0437,
-"dealer_wp": 0.1262
+"dealer_wp": 0.1262,
+"tr": 289.0,
+"atr5": 374.2
 },
 {
 "date": "2025-11-18",
@@ -253,7 +281,9 @@
 "dealer_gex": 20.798,
 "dealer_flip": 27728.1,
 "dealer_wc": -0.0465,
-"dealer_wp": 0.1581
+"dealer_wp": 0.1581,
+"tr": 707.0,
+"atr5": 432.0
 },
 {
 "date": "2025-11-19",
@@ -268,7 +298,9 @@
 "dealer_gex": 5.446,
 "dealer_flip": 27887.2,
 "dealer_wc": -0.0504,
-"dealer_wp": 0.1979
+"dealer_wp": 0.1979,
+"tr": 378.0,
+"atr5": 448.0
 },
 {
 "date": "2025-11-20",
@@ -283,7 +315,9 @@
 "dealer_gex": 23.866,
 "dealer_flip": null,
 "dealer_wc": 0.0971,
-"dealer_wp": 0.0746
+"dealer_wp": 0.0746,
+"tr": 877.0,
+"atr5": 573.0
 },
 {
 "date": "2025-11-21",
@@ -298,7 +332,9 @@
 "dealer_gex": 5.191,
 "dealer_flip": null,
 "dealer_wc": 0.0125,
-"dealer_wp": 0.0954
+"dealer_wp": 0.0954,
+"tr": 1085.0,
+"atr5": 667.2
 },
 {
 "date": "2025-11-24",
@@ -313,7 +349,9 @@
 "dealer_gex": 12.245,
 "dealer_flip": null,
 "dealer_wc": 0.0392,
-"dealer_wp": 0.0886
+"dealer_wp": 0.0886,
+"tr": 244.0,
+"atr5": 658.2
 },
 {
 "date": "2025-11-25",
@@ -328,7 +366,9 @@
 "dealer_gex": 12.088,
 "dealer_flip": null,
 "dealer_wc": 0.042,
-"dealer_wp": 0.0196
+"dealer_wp": 0.0196,
+"tr": 490.0,
+"atr5": 614.8
 },
 {
 "date": "2025-11-26",
@@ -343,7 +383,9 @@
 "dealer_gex": 4.794,
 "dealer_flip": null,
 "dealer_wc": 0.0167,
-"dealer_wp": 0.072
+"dealer_wp": 0.072,
+"tr": 451.0,
+"atr5": 629.4
 },
 {
 "date": "2025-11-27",
@@ -358,7 +400,9 @@
 "dealer_gex": 9.225,
 "dealer_flip": null,
 "dealer_wc": 0.0382,
-"dealer_wp": 0.0118
+"dealer_wp": 0.0118,
+"tr": 320.0,
+"atr5": 518.0
 },
 {
 "date": "2025-11-28",
@@ -373,7 +417,9 @@
 "dealer_gex": 6.275,
 "dealer_flip": null,
 "dealer_wc": 0.04,
-"dealer_wp": 0.0467
+"dealer_wp": 0.0467,
+"tr": 296.0,
+"atr5": 360.2
 },
 {
 "date": "2025-12-01",
@@ -388,7 +434,9 @@
 "dealer_gex": 10.074,
 "dealer_flip": 28007.5,
 "dealer_wc": -0.0272,
-"dealer_wp": 0.1022
+"dealer_wp": 0.1022,
+"tr": 343.0,
+"atr5": 380.0
 },
 {
 "date": "2025-12-02",
@@ -403,7 +451,9 @@
 "dealer_gex": 10.337,
 "dealer_flip": 27888.9,
 "dealer_wc": -0.024,
-"dealer_wp": 0.0808
+"dealer_wp": 0.0808,
+"tr": 385.0,
+"atr5": 359.0
 },
 {
 "date": "2025-12-03",
@@ -418,7 +468,9 @@
 "dealer_gex": 10.895,
 "dealer_flip": null,
 "dealer_wc": -0.0013,
-"dealer_wp": 0.2036
+"dealer_wp": 0.2036,
+"tr": 327.0,
+"atr5": 334.2
 },
 {
 "date": "2025-12-04",
@@ -433,7 +485,9 @@
 "dealer_gex": 27.815,
 "dealer_flip": null,
 "dealer_wc": 0.0261,
-"dealer_wp": 0.17
+"dealer_wp": 0.17,
+"tr": 210.0,
+"atr5": 312.2
 },
 {
 "date": "2025-12-05",
@@ -448,7 +502,9 @@
 "dealer_gex": 11.639,
 "dealer_flip": null,
 "dealer_wc": 0.036,
-"dealer_wp": 0.132
+"dealer_wp": 0.132,
+"tr": 256.0,
+"atr5": 304.2
 },
 {
 "date": "2025-12-08",
@@ -463,7 +519,9 @@
 "dealer_gex": 25.146,
 "dealer_flip": null,
 "dealer_wc": 0.0646,
-"dealer_wp": 0.1055
+"dealer_wp": 0.1055,
+"tr": 282.0,
+"atr5": 292.0
 },
 {
 "date": "2025-12-09",
@@ -478,7 +536,9 @@
 "dealer_gex": 30.764,
 "dealer_flip": null,
 "dealer_wc": 0.0329,
-"dealer_wp": 0.1195
+"dealer_wp": 0.1195,
+"tr": 156.0,
+"atr5": 246.2
 },
 {
 "date": "2025-12-10",
@@ -493,7 +553,9 @@
 "dealer_gex": 16.268,
 "dealer_flip": null,
 "dealer_wc": 0.1038,
-"dealer_wp": 0.1267
+"dealer_wp": 0.1267,
+"tr": 214.0,
+"atr5": 223.6
 },
 {
 "date": "2025-12-11",
@@ -508,7 +570,9 @@
 "dealer_gex": 21.638,
 "dealer_flip": null,
 "dealer_wc": 0.0152,
-"dealer_wp": 0.1138
+"dealer_wp": 0.1138,
+"tr": 543.0,
+"atr5": 290.2
 },
 {
 "date": "2025-12-12",
@@ -523,7 +587,9 @@
 "dealer_gex": 10.852,
 "dealer_flip": null,
 "dealer_wc": 0.0386,
-"dealer_wp": 0.0902
+"dealer_wp": 0.0902,
+"tr": 232.0,
+"atr5": 285.4
 },
 {
 "date": "2025-12-15",
@@ -538,7 +604,9 @@
 "dealer_gex": 23.561,
 "dealer_flip": null,
 "dealer_wc": 0.031,
-"dealer_wp": 0.1067
+"dealer_wp": 0.1067,
+"tr": 537.0,
+"atr5": 336.4
 },
 {
 "date": "2025-12-16",
@@ -553,7 +621,9 @@
 "dealer_gex": 25.552,
 "dealer_flip": null,
 "dealer_wc": 0.031,
-"dealer_wp": 0.0794
+"dealer_wp": 0.0794,
+"tr": 496.0,
+"atr5": 404.4
 },
 {
 "date": "2025-12-17",
@@ -568,7 +638,9 @@
 "dealer_gex": 6.87,
 "dealer_flip": 28014.8,
 "dealer_wc": -0.0816,
-"dealer_wp": 0.1932
+"dealer_wp": 0.1932,
+"tr": 299.0,
+"atr5": 421.4
 },
 {
 "date": "2025-12-18",
@@ -583,7 +655,9 @@
 "dealer_gex": 35.738,
 "dealer_flip": null,
 "dealer_wc": 0.0716,
-"dealer_wp": 0.1555
+"dealer_wp": 0.1555,
+"tr": 222.0,
+"atr5": 357.2
 },
 {
 "date": "2025-12-19",
@@ -598,7 +672,9 @@
 "dealer_gex": 5.608,
 "dealer_flip": null,
 "dealer_wc": 0.0138,
-"dealer_wp": 0.0813
+"dealer_wp": 0.0813,
+"tr": 392.0,
+"atr5": 389.2
 },
 {
 "date": "2025-12-22",
@@ -613,7 +689,9 @@
 "dealer_gex": 18.693,
 "dealer_flip": null,
 "dealer_wc": 0.0482,
-"dealer_wp": 0.072
+"dealer_wp": 0.072,
+"tr": 474.0,
+"atr5": 376.6
 },
 {
 "date": "2025-12-23",
@@ -628,7 +706,9 @@
 "dealer_gex": 14.978,
 "dealer_flip": null,
 "dealer_wc": 0.0216,
-"dealer_wp": 0.047
+"dealer_wp": 0.047,
+"tr": 114.0,
+"atr5": 300.2
 },
 {
 "date": "2025-12-24",
@@ -643,7 +723,9 @@
 "dealer_gex": -8.176,
 "dealer_flip": 28215.4,
 "dealer_wc": -0.0804,
-"dealer_wp": 0.0519
+"dealer_wp": 0.0519,
+"tr": 177.0,
+"atr5": 275.8
 },
 {
 "date": "2025-12-26",
@@ -658,7 +740,9 @@
 "dealer_gex": 14.673,
 "dealer_flip": null,
 "dealer_wc": 0.0467,
-"dealer_wp": 0.1471
+"dealer_wp": 0.1471,
+"tr": 242.0,
+"atr5": 279.8
 },
 {
 "date": "2025-12-29",
@@ -673,7 +757,9 @@
 "dealer_gex": 30.468,
 "dealer_flip": null,
 "dealer_wc": 0.0736,
-"dealer_wp": 0.0942
+"dealer_wp": 0.0942,
+"tr": 325.0,
+"atr5": 266.4
 },
 {
 "date": "2025-12-30",
@@ -688,7 +774,9 @@
 "dealer_gex": 16.531,
 "dealer_flip": null,
 "dealer_wc": -0.0025,
-"dealer_wp": 0.0865
+"dealer_wp": 0.0865,
+"tr": 245.0,
+"atr5": 220.6
 },
 {
 "date": "2025-12-31",
@@ -703,7 +791,9 @@
 "dealer_gex": 11.315,
 "dealer_flip": null,
 "dealer_wc": 0.0234,
-"dealer_wp": 0.122
+"dealer_wp": 0.122,
+"tr": 271.0,
+"atr5": 252.0
 },
 {
 "date": "2026-01-02",
@@ -718,7 +808,9 @@
 "dealer_gex": 17.327,
 "dealer_flip": null,
 "dealer_wc": 0.0999,
-"dealer_wp": 0.148
+"dealer_wp": 0.148,
+"tr": 484.0,
+"atr5": 313.4
 },
 {
 "date": "2026-01-05",
@@ -733,7 +825,9 @@
 "dealer_gex": 20.112,
 "dealer_flip": null,
 "dealer_wc": 0.0673,
-"dealer_wp": 0.0724
+"dealer_wp": 0.0724,
+"tr": 1014.0,
+"atr5": 467.8
 },
 {
 "date": "2026-01-06",
@@ -748,7 +842,9 @@
 "dealer_gex": 12.312,
 "dealer_flip": null,
 "dealer_wc": 0.0082,
-"dealer_wp": 0.0791
+"dealer_wp": 0.0791,
+"tr": 489.0,
+"atr5": 500.6
 },
 {
 "date": "2026-01-07",
@@ -763,7 +859,9 @@
 "dealer_gex": 5.037,
 "dealer_flip": 31425.6,
 "dealer_wc": -0.0244,
-"dealer_wp": 0.1239
+"dealer_wp": 0.1239,
+"tr": 228.0,
+"atr5": 497.2
 },
 {
 "date": "2026-01-08",
@@ -778,7 +876,9 @@
 "dealer_gex": 14.484,
 "dealer_flip": null,
 "dealer_wc": -0.0025,
-"dealer_wp": 0.0927
+"dealer_wp": 0.0927,
+"tr": 310.0,
+"atr5": 505.0
 },
 {
 "date": "2026-01-09",
@@ -793,7 +893,9 @@
 "dealer_gex": 13.545,
 "dealer_flip": null,
 "dealer_wc": 0.0435,
-"dealer_wp": 0.1577
+"dealer_wp": 0.1577,
+"tr": 573.0,
+"atr5": 522.8
 },
 {
 "date": "2026-01-12",
@@ -808,7 +910,9 @@
 "dealer_gex": 21.315,
 "dealer_flip": null,
 "dealer_wc": 0.0404,
-"dealer_wp": 0.1178
+"dealer_wp": 0.1178,
+"tr": 307.0,
+"atr5": 381.4
 },
 {
 "date": "2026-01-13",
@@ -823,7 +927,9 @@
 "dealer_gex": 19.241,
 "dealer_flip": null,
 "dealer_wc": 0.0083,
-"dealer_wp": 0.1078
+"dealer_wp": 0.1078,
+"tr": 626.0,
+"atr5": 408.8
 },
 {
 "date": "2026-01-14",
@@ -838,7 +944,9 @@
 "dealer_gex": 12.198,
 "dealer_flip": null,
 "dealer_wc": 0.0278,
-"dealer_wp": 0.1943
+"dealer_wp": 0.1943,
+"tr": 288.0,
+"atr5": 420.8
 },
 {
 "date": "2026-01-15",
@@ -853,7 +961,9 @@
 "dealer_gex": 29.733,
 "dealer_flip": null,
 "dealer_wc": 0.0864,
-"dealer_wp": 0.1505
+"dealer_wp": 0.1505,
+"tr": 313.0,
+"atr5": 421.4
 },
 {
 "date": "2026-01-16",
@@ -868,7 +978,9 @@
 "dealer_gex": 5.11,
 "dealer_flip": 32239.8,
 "dealer_wc": -0.027,
-"dealer_wp": 0.1206
+"dealer_wp": 0.1206,
+"tr": 486.0,
+"atr5": 404.0
 },
 {
 "date": "2026-01-19",
@@ -883,7 +995,9 @@
 "dealer_gex": 30.078,
 "dealer_flip": null,
 "dealer_wc": 0.0773,
-"dealer_wp": 0.1157
+"dealer_wp": 0.1157,
+"tr": 566.0,
+"atr5": 455.8
 },
 {
 "date": "2026-01-20",
@@ -898,7 +1012,9 @@
 "dealer_gex": 39.242,
 "dealer_flip": null,
 "dealer_wc": 0.0756,
-"dealer_wp": 0.1115
+"dealer_wp": 0.1115,
+"tr": 414.0,
+"atr5": 413.4
 },
 {
 "date": "2026-01-21",
@@ -913,7 +1029,9 @@
 "dealer_gex": 16.756,
 "dealer_flip": null,
 "dealer_wc": 0.0424,
-"dealer_wp": 0.2535
+"dealer_wp": 0.2535,
+"tr": 472.0,
+"atr5": 450.2
 },
 {
 "date": "2026-01-22",
@@ -928,7 +1046,9 @@
 "dealer_gex": 53.671,
 "dealer_flip": null,
 "dealer_wc": 0.1092,
-"dealer_wp": 0.1821
+"dealer_wp": 0.1821,
+"tr": 812.0,
+"atr5": 550.0
 },
 {
 "date": "2026-01-23",
@@ -943,7 +1063,9 @@
 "dealer_gex": 13.637,
 "dealer_flip": null,
 "dealer_wc": 0.024,
-"dealer_wp": 0.2035
+"dealer_wp": 0.2035,
+"tr": 309.0,
+"atr5": 514.6
 },
 {
 "date": "2026-01-26",
@@ -958,7 +1080,9 @@
 "dealer_gex": 21.732,
 "dealer_flip": null,
 "dealer_wc": 0.0286,
-"dealer_wp": 0.1411
+"dealer_wp": 0.1411,
+"tr": 145.0,
+"atr5": 430.4
 },
 {
 "date": "2026-01-27",
@@ -973,7 +1097,9 @@
 "dealer_gex": 32.532,
 "dealer_flip": null,
 "dealer_wc": 0.0496,
-"dealer_wp": 0.1088
+"dealer_wp": 0.1088,
+"tr": 388.0,
+"atr5": 425.2
 },
 {
 "date": "2026-01-28",
@@ -988,7 +1114,9 @@
 "dealer_gex": 16.717,
 "dealer_flip": null,
 "dealer_wc": 0.0935,
-"dealer_wp": 0.1577
+"dealer_wp": 0.1577,
+"tr": 429.0,
+"atr5": 416.6
 },
 {
 "date": "2026-01-29",
@@ -1003,7 +1131,9 @@
 "dealer_gex": 26.359,
 "dealer_flip": null,
 "dealer_wc": 0.0257,
-"dealer_wp": 0.1379
+"dealer_wp": 0.1379,
+"tr": 427.0,
+"atr5": 339.6
 },
 {
 "date": "2026-01-30",
@@ -1018,7 +1148,9 @@
 "dealer_gex": 14.805,
 "dealer_flip": null,
 "dealer_wc": 0.0728,
-"dealer_wp": 0.1439
+"dealer_wp": 0.1439,
+"tr": 685.0,
+"atr5": 414.8
 },
 {
 "date": "2026-02-02",
@@ -1033,7 +1165,9 @@
 "dealer_gex": 30.748,
 "dealer_flip": null,
 "dealer_wc": 0.074,
-"dealer_wp": 0.1899
+"dealer_wp": 0.1899,
+"tr": 855.0,
+"atr5": 556.8
 },
 {
 "date": "2026-02-03",
@@ -1048,7 +1182,9 @@
 "dealer_gex": 51.957,
 "dealer_flip": null,
 "dealer_wc": 0.0884,
-"dealer_wp": 0.1389
+"dealer_wp": 0.1389,
+"tr": 836.0,
+"atr5": 646.4
 },
 {
 "date": "2026-02-04",
@@ -1063,7 +1199,9 @@
 "dealer_gex": 19.129,
 "dealer_flip": null,
 "dealer_wc": 0.0917,
-"dealer_wp": 0.1918
+"dealer_wp": 0.1918,
+"tr": 441.0,
+"atr5": 648.8
 },
 {
 "date": "2026-02-05",
@@ -1078,7 +1216,9 @@
 "dealer_gex": 30.104,
 "dealer_flip": null,
 "dealer_wc": 0.0305,
-"dealer_wp": 0.1866
+"dealer_wp": 0.1866,
+"tr": 625.0,
+"atr5": 688.4
 },
 {
 "date": "2026-02-06",
@@ -1093,7 +1233,9 @@
 "dealer_gex": 14.827,
 "dealer_flip": null,
 "dealer_wc": 0.0761,
-"dealer_wp": 0.1862
+"dealer_wp": 0.1862,
+"tr": 687.0,
+"atr5": 688.8
 },
 {
 "date": "2026-02-09",
@@ -1108,7 +1250,9 @@
 "dealer_gex": 20.872,
 "dealer_flip": null,
 "dealer_wc": 0.0322,
-"dealer_wp": 0.1418
+"dealer_wp": 0.1418,
+"tr": 1029.0,
+"atr5": 723.6
 },
 {
 "date": "2026-02-10",
@@ -1123,7 +1267,9 @@
 "dealer_gex": 20.957,
 "dealer_flip": null,
 "dealer_wc": 0.0463,
-"dealer_wp": 0.0731
+"dealer_wp": 0.0731,
+"tr": 658.0,
+"atr5": 688.0
 },
 {
 "date": "2026-02-11",
@@ -1138,7 +1284,9 @@
 "dealer_gex": 1.071,
 "dealer_flip": 32873.4,
 "dealer_wc": 0.0331,
-"dealer_wp": -0.0301
+"dealer_wp": -0.0301,
+"tr": 571.0,
+"atr5": 714.0
 },
 {
 "date": "2026-02-23",
@@ -1153,7 +1301,9 @@
 "dealer_gex": -2.652,
 "dealer_flip": null,
 "dealer_wc": -0.0186,
-"dealer_wp": -0.0353
+"dealer_wp": -0.0353,
+"tr": 678.0,
+"atr5": 724.6
 },
 {
 "date": "2026-02-24",
@@ -1168,7 +1318,9 @@
 "dealer_gex": -9.883,
 "dealer_flip": 33285.3,
 "dealer_wc": -0.0695,
-"dealer_wp": 0.0162
+"dealer_wp": 0.0162,
+"tr": 1116.0,
+"atr5": 810.4
 },
 {
 "date": "2026-02-25",
@@ -1183,7 +1335,9 @@
 "dealer_gex": -1.951,
 "dealer_flip": null,
 "dealer_wc": -0.0453,
-"dealer_wp": 0.0076
+"dealer_wp": 0.0076,
+"tr": 950.0,
+"atr5": 794.6
 },
 {
 "date": "2026-02-26",
@@ -1198,7 +1352,9 @@
 "dealer_gex": 7.662,
 "dealer_flip": null,
 "dealer_wc": 0.0455,
-"dealer_wp": 0.0254
+"dealer_wp": 0.0254,
+"tr": 407.0,
+"atr5": 744.4
 },
 {
 "date": "2026-03-02",
@@ -1213,7 +1369,9 @@
 "dealer_gex": -4.289,
 "dealer_flip": null,
 "dealer_wc": -0.0277,
-"dealer_wp": -0.0301
+"dealer_wp": -0.0301,
+"tr": 882.0,
+"atr5": 806.6
 },
 {
 "date": "2026-03-03",
@@ -1228,7 +1386,9 @@
 "dealer_gex": 1.102,
 "dealer_flip": 34557.4,
 "dealer_wc": -0.0223,
-"dealer_wp": 0.0241
+"dealer_wp": 0.0241,
+"tr": 1006.0,
+"atr5": 872.2
 },
 {
 "date": "2026-03-04",
@@ -1243,7 +1403,9 @@
 "dealer_gex": 1.61,
 "dealer_flip": 33773.3,
 "dealer_wc": -0.067,
-"dealer_wp": 0.0903
+"dealer_wp": 0.0903,
+"tr": 1646.0,
+"atr5": 978.2
 },
 {
 "date": "2026-03-05",
@@ -1258,7 +1420,9 @@
 "dealer_gex": -0.496,
 "dealer_flip": 33580.8,
 "dealer_wc": -0.042,
-"dealer_wp": 0.0454
+"dealer_wp": 0.0454,
+"tr": 1460.0,
+"atr5": 1080.2
 },
 {
 "date": "2026-03-06",
@@ -1273,7 +1437,9 @@
 "dealer_gex": 0.468,
 "dealer_flip": 34042.6,
 "dealer_wc": -0.0398,
-"dealer_wp": 0.0525
+"dealer_wp": 0.0525,
+"tr": 592.0,
+"atr5": 1117.2
 },
 {
 "date": "2026-03-09",
@@ -1288,7 +1454,9 @@
 "dealer_gex": 7.413,
 "dealer_flip": null,
 "dealer_wc": 0.0112,
-"dealer_wp": 0.0938
+"dealer_wp": 0.0938,
+"tr": 2580.0,
+"atr5": 1456.8
 },
 {
 "date": "2026-03-10",
@@ -1303,7 +1471,9 @@
 "dealer_gex": 6.57,
 "dealer_flip": null,
 "dealer_wc": 0.0325,
-"dealer_wp": 0.028
+"dealer_wp": 0.028,
+"tr": 1543.0,
+"atr5": 1564.2
 },
 {
 "date": "2026-03-11",
@@ -1318,7 +1488,9 @@
 "dealer_gex": -0.414,
 "dealer_flip": 32039.0,
 "dealer_wc": -0.0095,
-"dealer_wp": 0.0039
+"dealer_wp": 0.0039,
+"tr": 1489.0,
+"atr5": 1532.8
 },
 {
 "date": "2026-03-12",
@@ -1333,7 +1505,9 @@
 "dealer_gex": -0.024,
 "dealer_flip": 33502.2,
 "dealer_wc": -0.0231,
-"dealer_wp": 0.0217
+"dealer_wp": 0.0217,
+"tr": 659.0,
+"atr5": 1372.6
 },
 {
 "date": "2026-03-13",
@@ -1348,7 +1522,9 @@
 "dealer_gex": -1.428,
 "dealer_flip": null,
 "dealer_wc": -0.0265,
-"dealer_wp": -0.0
+"dealer_wp": -0.0,
+"tr": 867.0,
+"atr5": 1427.6
 },
 {
 "date": "2026-03-16",
@@ -1363,7 +1539,9 @@
 "dealer_gex": 2.77,
 "dealer_flip": null,
 "dealer_wc": 0.005,
-"dealer_wp": 0.0308
+"dealer_wp": 0.0308,
+"tr": 646.0,
+"atr5": 1040.8
 },
 {
 "date": "2026-03-17",
@@ -1378,7 +1556,9 @@
 "dealer_gex": 1.113,
 "dealer_flip": 33400.4,
 "dealer_wc": 0.0196,
-"dealer_wp": -0.0139
+"dealer_wp": -0.0139,
+"tr": 767.0,
+"atr5": 885.6
 },
 {
 "date": "2026-03-18",
@@ -1393,7 +1573,9 @@
 "dealer_gex": 0.037,
 "dealer_flip": 34295.0,
 "dealer_wc": -0.0313,
-"dealer_wp": 0.0418
+"dealer_wp": 0.0418,
+"tr": 645.0,
+"atr5": 716.8
 },
 {
 "date": "2026-03-19",
@@ -1408,7 +1590,9 @@
 "dealer_gex": 7.83,
 "dealer_flip": 35383.0,
 "dealer_wc": -0.0152,
-"dealer_wp": 0.1095
+"dealer_wp": 0.1095,
+"tr": 726.0,
+"atr5": 730.2
 },
 {
 "date": "2026-03-20",
@@ -1423,7 +1607,9 @@
 "dealer_gex": 0.982,
 "dealer_flip": null,
 "dealer_wc": 0.005,
-"dealer_wp": 0.0253
+"dealer_wp": 0.0253,
+"tr": 517.0,
+"atr5": 660.2
 },
 {
 "date": "2026-03-23",
@@ -1438,7 +1624,9 @@
 "dealer_gex": 6.111,
 "dealer_flip": null,
 "dealer_wc": 0.0223,
-"dealer_wp": 0.0874
+"dealer_wp": 0.0874,
+"tr": 1346.0,
+"atr5": 800.2
 },
 {
 "date": "2026-03-24",
@@ -1453,7 +1641,9 @@
 "dealer_gex": 14.46,
 "dealer_flip": null,
 "dealer_wc": 0.0749,
-"dealer_wp": 0.1094
+"dealer_wp": 0.1094,
+"tr": 1051.0,
+"atr5": 857.0
 },
 {
 "date": "2026-03-25",
@@ -1468,7 +1658,9 @@
 "dealer_gex": 5.636,
 "dealer_flip": null,
 "dealer_wc": 0.0685,
-"dealer_wp": 0.1204
+"dealer_wp": 0.1204,
+"tr": 1109.0,
+"atr5": 949.8
 },
 {
 "date": "2026-03-26",
@@ -1483,7 +1675,9 @@
 "dealer_gex": 16.343,
 "dealer_flip": null,
 "dealer_wc": 0.1212,
-"dealer_wp": 0.1216
+"dealer_wp": 0.1216,
+"tr": 677.0,
+"atr5": 940.0
 },
 {
 "date": "2026-03-27",
@@ -1498,7 +1692,9 @@
 "dealer_gex": 5.178,
 "dealer_flip": null,
 "dealer_wc": 0.0585,
-"dealer_wp": 0.1106
+"dealer_wp": 0.1106,
+"tr": 788.0,
+"atr5": 994.2
 },
 {
 "date": "2026-03-30",
@@ -1513,7 +1709,9 @@
 "dealer_gex": 5.882,
 "dealer_flip": null,
 "dealer_wc": 0.0187,
-"dealer_wp": 0.0771
+"dealer_wp": 0.0771,
+"tr": 1093.0,
+"atr5": 943.6
 },
 {
 "date": "2026-03-31",
@@ -1528,7 +1726,9 @@
 "dealer_gex": 4.665,
 "dealer_flip": 32758.5,
 "dealer_wc": -0.0363,
-"dealer_wp": 0.0693
+"dealer_wp": 0.0693,
+"tr": 662.0,
+"atr5": 865.8
 },
 {
 "date": "2026-04-01",
@@ -1543,7 +1743,9 @@
 "dealer_gex": 5.481,
 "dealer_flip": null,
 "dealer_wc": 0.128,
-"dealer_wp": 0.043
+"dealer_wp": 0.043,
+"tr": 1432.0,
+"atr5": 930.4
 },
 {
 "date": "2026-04-02",
@@ -1558,7 +1760,9 @@
 "dealer_gex": 3.452,
 "dealer_flip": null,
 "dealer_wc": 0.0303,
-"dealer_wp": 0.0399
+"dealer_wp": 0.0399,
+"tr": 1201.0,
+"atr5": 1035.2
 },
 {
 "date": "2026-04-07",
@@ -1573,7 +1777,9 @@
 "dealer_gex": -1.807,
 "dealer_flip": null,
 "dealer_wc": -0.013,
-"dealer_wp": -0.0239
+"dealer_wp": -0.0239,
+"tr": 890.0,
+"atr5": 1055.6
 },
 {
 "date": "2026-04-08",
@@ -1588,7 +1794,9 @@
 "dealer_gex": 12.928,
 "dealer_flip": null,
 "dealer_wc": 0.1825,
-"dealer_wp": 0.0871
+"dealer_wp": 0.0871,
+"tr": 1901.0,
+"atr5": 1217.2
 },
 {
 "date": "2026-04-09",
@@ -1603,7 +1811,9 @@
 "dealer_gex": 16.415,
 "dealer_flip": null,
 "dealer_wc": 0.0983,
-"dealer_wp": 0.0811
+"dealer_wp": 0.0811,
+"tr": 355.0,
+"atr5": 1155.8
 },
 {
 "date": "2026-04-10",
@@ -1618,7 +1828,9 @@
 "dealer_gex": 7.804,
 "dealer_flip": null,
 "dealer_wc": 0.0872,
-"dealer_wp": 0.0567
+"dealer_wp": 0.0567,
+"tr": 648.0,
+"atr5": 999.0
 },
 {
 "date": "2026-04-13",
@@ -1633,7 +1845,9 @@
 "dealer_gex": 8.219,
 "dealer_flip": null,
 "dealer_wc": 0.059,
-"dealer_wp": 0.0329
+"dealer_wp": 0.0329,
+"tr": 427.0,
+"atr5": 844.2
 },
 {
 "date": "2026-04-14",
@@ -1648,7 +1862,9 @@
 "dealer_gex": 9.203,
 "dealer_flip": 35617.1,
 "dealer_wc": 0.0879,
-"dealer_wp": -0.0514
+"dealer_wp": -0.0514,
+"tr": 973.0,
+"atr5": 860.8
 },
 {
 "date": "2026-04-15",
@@ -1663,7 +1879,9 @@
 "dealer_gex": 3.612,
 "dealer_flip": null,
 "dealer_wc": 0.0173,
-"dealer_wp": 0.0914
+"dealer_wp": 0.0914,
+"tr": 692.0,
+"atr5": 619.0
 },
 {
 "date": "2026-04-16",
@@ -1678,7 +1896,9 @@
 "dealer_gex": 2.624,
 "dealer_flip": null,
 "dealer_wc": -0.0008,
-"dealer_wp": 0.0514
+"dealer_wp": 0.0514,
+"tr": 1023.0,
+"atr5": 752.6
 },
 {
 "date": "2026-04-17",
@@ -1693,7 +1913,9 @@
 "dealer_gex": 2.033,
 "dealer_flip": null,
 "dealer_wc": 0.0103,
-"dealer_wp": 0.0489
+"dealer_wp": 0.0489,
+"tr": 612.0,
+"atr5": 745.4
 },
 {
 "date": "2026-04-20",
@@ -1708,7 +1930,9 @@
 "dealer_gex": 14.908,
 "dealer_flip": null,
 "dealer_wc": 0.0721,
-"dealer_wp": 0.1059
+"dealer_wp": 0.1059,
+"tr": 621.0,
+"atr5": 784.2
 },
 {
 "date": "2026-04-21",
@@ -1723,7 +1947,9 @@
 "dealer_gex": 16.776,
 "dealer_flip": null,
 "dealer_wc": 0.0799,
-"dealer_wp": 0.0557
+"dealer_wp": 0.0557,
+"tr": 905.0,
+"atr5": 770.6
 },
 {
 "date": "2026-04-22",
@@ -1738,7 +1964,9 @@
 "dealer_gex": 7.751,
 "dealer_flip": null,
 "dealer_wc": 0.0972,
-"dealer_wp": 0.1059
+"dealer_wp": 0.1059,
+"tr": 444.0,
+"atr5": 721.0
 },
 {
 "date": "2026-04-23",
@@ -1753,7 +1981,9 @@
 "dealer_gex": 17.912,
 "dealer_flip": null,
 "dealer_wc": 0.0752,
-"dealer_wp": 0.1015
+"dealer_wp": 0.1015,
+"tr": 1679.0,
+"atr5": 852.2
 },
 {
 "date": "2026-04-24",
@@ -1768,7 +1998,9 @@
 "dealer_gex": 2.013,
 "dealer_flip": null,
 "dealer_wc": 0.0176,
-"dealer_wp": 0.06
+"dealer_wp": 0.06,
+"tr": 1369.0,
+"atr5": 1003.6
 },
 {
 "date": "2026-04-27",
@@ -1783,7 +2015,9 @@
 "dealer_gex": 10.821,
 "dealer_flip": null,
 "dealer_wc": 0.103,
-"dealer_wp": 0.0523
+"dealer_wp": 0.0523,
+"tr": 1234.0,
+"atr5": 1126.2
 },
 {
 "date": "2026-04-28",
@@ -1798,7 +2032,9 @@
 "dealer_gex": 17.136,
 "dealer_flip": null,
 "dealer_wc": 0.1118,
-"dealer_wp": 0.0465
+"dealer_wp": 0.0465,
+"tr": 686.0,
+"atr5": 1082.4
 },
 {
 "date": "2026-04-29",
@@ -1813,7 +2049,9 @@
 "dealer_gex": 5.972,
 "dealer_flip": null,
 "dealer_wc": 0.0568,
-"dealer_wp": 0.1533
+"dealer_wp": 0.1533,
+"tr": 667.0,
+"atr5": 1127.0
 },
 {
 "date": "2026-04-30",
@@ -1828,7 +2066,9 @@
 "dealer_gex": 13.967,
 "dealer_flip": null,
 "dealer_wc": 0.1035,
-"dealer_wp": 0.1257
+"dealer_wp": 0.1257,
+"tr": 672.0,
+"atr5": 925.6
 },
 {
 "date": "2026-05-04",
@@ -1843,7 +2083,9 @@
 "dealer_gex": 5.635,
 "dealer_flip": null,
 "dealer_wc": 0.0703,
-"dealer_wp": 0.0878
+"dealer_wp": 0.0878,
+"tr": 1714.0,
+"atr5": 994.6
 },
 {
 "date": "2026-05-05",
@@ -1858,7 +2100,9 @@
 "dealer_gex": 11.329,
 "dealer_flip": null,
 "dealer_wc": 0.0505,
-"dealer_wp": 0.0879
+"dealer_wp": 0.0879,
+"tr": 299.0,
+"atr5": 807.6
 },
 {
 "date": "2026-05-06",
@@ -1873,7 +2117,9 @@
 "dealer_gex": 4.726,
 "dealer_flip": null,
 "dealer_wc": 0.0416,
-"dealer_wp": 0.1158
+"dealer_wp": 0.1158,
+"tr": 970.0,
+"atr5": 864.4
 },
 {
 "date": "2026-05-07",
@@ -1888,7 +2134,9 @@
 "dealer_gex": 10.801,
 "dealer_flip": null,
 "dealer_wc": 0.0594,
-"dealer_wp": 0.0702
+"dealer_wp": 0.0702,
+"tr": 965.0,
+"atr5": 924.0
 },
 {
 "date": "2026-05-08",
@@ -1903,7 +2151,9 @@
 "dealer_gex": 3.269,
 "dealer_flip": null,
 "dealer_wc": 0.0367,
-"dealer_wp": 0.0601
+"dealer_wp": 0.0601,
+"tr": 804.0,
+"atr5": 950.4
 },
 {
 "date": "2026-05-11",
@@ -1918,7 +2168,9 @@
 "dealer_gex": 10.709,
 "dealer_flip": null,
 "dealer_wc": 0.0693,
-"dealer_wp": 0.0641
+"dealer_wp": 0.0641,
+"tr": 456.0,
+"atr5": 698.8
 },
 {
 "date": "2026-05-12",
@@ -1933,7 +2185,9 @@
 "dealer_gex": 13.693,
 "dealer_flip": null,
 "dealer_wc": 0.08,
-"dealer_wp": 0.0415
+"dealer_wp": 0.0415,
+"tr": 756.0,
+"atr5": 790.2
 },
 {
 "date": "2026-05-13",
@@ -1948,7 +2202,9 @@
 "dealer_gex": 11.203,
 "dealer_flip": null,
 "dealer_wc": 0.166,
-"dealer_wp": 0.0731
+"dealer_wp": 0.0731,
+"tr": 711.0,
+"atr5": 738.4
 },
 {
 "date": "2026-05-14",
@@ -1963,7 +2219,9 @@
 "dealer_gex": 17.47,
 "dealer_flip": null,
 "dealer_wc": 0.1186,
-"dealer_wp": 0.0445
+"dealer_wp": 0.0445,
+"tr": 769.0,
+"atr5": 699.2
 },
 {
 "date": "2026-05-15",
@@ -1978,7 +2236,9 @@
 "dealer_gex": 9.764,
 "dealer_flip": null,
 "dealer_wc": 0.1503,
-"dealer_wp": 0.0598
+"dealer_wp": 0.0598,
+"tr": 1478.0,
+"atr5": 834.0
 },
 {
 "date": "2026-05-18",
@@ -1993,7 +2253,9 @@
 "dealer_gex": 22.754,
 "dealer_flip": null,
 "dealer_wc": 0.1591,
-"dealer_wp": 0.1089
+"dealer_wp": 0.1089,
+"tr": 843.0,
+"atr5": 911.4
 },
 {
 "date": "2026-05-19",
@@ -2008,7 +2270,9 @@
 "dealer_gex": 24.712,
 "dealer_flip": null,
 "dealer_wc": 0.1144,
-"dealer_wp": 0.0967
+"dealer_wp": 0.0967,
+"tr": 743.0,
+"atr5": 908.8
 },
 {
 "date": "2026-05-20",
@@ -2023,7 +2287,9 @@
 "dealer_gex": -0.2,
 "dealer_flip": 39396.0,
 "dealer_wc": -0.0186,
-"dealer_wp": 0.0098
+"dealer_wp": 0.0098,
+"tr": 524.0,
+"atr5": 871.4
 },
 {
 "date": "2026-05-21",
@@ -2038,7 +2304,9 @@
 "dealer_gex": 11.048,
 "dealer_flip": null,
 "dealer_wc": 0.0688,
-"dealer_wp": 0.0542
+"dealer_wp": 0.0542,
+"tr": 1588.0,
+"atr5": 1035.2
 },
 {
 "date": "2026-05-22",
@@ -2053,7 +2321,9 @@
 "dealer_gex": 0.107,
 "dealer_flip": 42852.9,
 "dealer_wc": -0.0085,
-"dealer_wp": 0.0183
+"dealer_wp": 0.0183,
+"tr": 1029.0,
+"atr5": 945.4
 },
 {
 "date": "2026-05-25",
@@ -2068,7 +2338,9 @@
 "dealer_gex": 4.242,
 "dealer_flip": null,
 "dealer_wc": 0.0316,
-"dealer_wp": 0.025
+"dealer_wp": 0.025,
+"tr": 1608.0,
+"atr5": 1098.4
 },
 {
 "date": "2026-05-26",
@@ -2083,7 +2355,9 @@
 "dealer_gex": 3.62,
 "dealer_flip": null,
 "dealer_wc": 0.0215,
-"dealer_wp": 0.0042
+"dealer_wp": 0.0042,
+"tr": 661.0,
+"atr5": 1082.0
 },
 {
 "date": "2026-05-27",
@@ -2098,7 +2372,9 @@
 "dealer_gex": 1.203,
 "dealer_flip": null,
 "dealer_wc": -0.0043,
-"dealer_wp": 0.0514
+"dealer_wp": 0.0514,
+"tr": 1406.0,
+"atr5": 1258.4
 },
 {
 "date": "2026-05-28",
@@ -2113,7 +2389,9 @@
 "dealer_gex": 0.013,
 "dealer_flip": 43841.7,
 "dealer_wc": -0.06,
-"dealer_wp": 0.06
+"dealer_wp": 0.06,
+"tr": 1890.0,
+"atr5": 1318.8
 },
 {
 "date": "2026-05-29",
@@ -2128,7 +2406,9 @@
 "dealer_gex": -2.54,
 "dealer_flip": null,
 "dealer_wc": -0.1005,
-"dealer_wp": 0.0388
+"dealer_wp": 0.0388,
+"tr": 1629.0,
+"atr5": 1438.8
 },
 {
 "date": "2026-06-01",
@@ -2143,7 +2423,9 @@
 "dealer_gex": 5.701,
 "dealer_flip": null,
 "dealer_wc": 0.0455,
-"dealer_wp": 0.0384
+"dealer_wp": 0.0384,
+"tr": 1180.0,
+"atr5": 1353.2
 },
 {
 "date": "2026-06-02",
@@ -2158,7 +2440,9 @@
 "dealer_gex": 11.262,
 "dealer_flip": null,
 "dealer_wc": 0.0578,
-"dealer_wp": 0.0369
+"dealer_wp": 0.0369,
+"tr": 895.0,
+"atr5": 1400.0
 },
 {
 "date": "2026-06-03",
@@ -2173,7 +2457,9 @@
 "dealer_gex": 0.622,
 "dealer_flip": 48667.7,
 "dealer_wc": -0.0073,
-"dealer_wp": 0.0395
+"dealer_wp": 0.0395,
+"tr": 907.0,
+"atr5": 1300.2
 },
 {
 "date": "2026-06-04",
@@ -2188,7 +2474,9 @@
 "dealer_gex": 4.287,
 "dealer_flip": 47341.9,
 "dealer_wc": -0.0133,
-"dealer_wp": 0.0746
+"dealer_wp": 0.0746,
+"tr": 728.0,
+"atr5": 1067.8
 },
 {
 "date": "2026-06-05",
@@ -2203,7 +2491,9 @@
 "dealer_gex": 0.867,
 "dealer_flip": 46507.4,
 "dealer_wc": -0.0219,
-"dealer_wp": 0.0528
+"dealer_wp": 0.0528,
+"tr": 1639.0,
+"atr5": 1069.8
 },
 {
 "date": "2026-06-08",
@@ -2218,7 +2508,9 @@
 "dealer_gex": 6.058,
 "dealer_flip": null,
 "dealer_wc": 0.0129,
-"dealer_wp": 0.074
+"dealer_wp": 0.074,
+"tr": 2986.0,
+"atr5": 1431.0
 },
 {
 "date": "2026-06-09",
@@ -2233,7 +2525,9 @@
 "dealer_gex": 11.635,
 "dealer_flip": null,
 "dealer_wc": 0.0784,
-"dealer_wp": 0.002
+"dealer_wp": 0.002,
+"tr": 1670.0,
+"atr5": 1586.0
 },
 {
 "date": "2026-06-10",
@@ -2248,7 +2542,9 @@
 "dealer_gex": 1.133,
 "dealer_flip": null,
 "dealer_wc": 0.0471,
-"dealer_wp": -0.0119
+"dealer_wp": -0.0119,
+"tr": 1539.0,
+"atr5": 1712.4
 },
 {
 "date": "2026-06-11",
@@ -2263,7 +2559,9 @@
 "dealer_gex": 10.076,
 "dealer_flip": null,
 "dealer_wc": 0.083,
-"dealer_wp": 0.0415
+"dealer_wp": 0.0415,
+"tr": 1459.0,
+"atr5": 1858.6
 },
 {
 "date": "2026-06-12",
@@ -2278,7 +2576,9 @@
 "dealer_gex": 5.3,
 "dealer_flip": null,
 "dealer_wc": 0.1278,
-"dealer_wp": -0.0118
+"dealer_wp": -0.0118,
+"tr": 1690.0,
+"atr5": 1868.8
 },
 {
 "date": "2026-06-15",
@@ -2293,7 +2593,9 @@
 "dealer_gex": 12.762,
 "dealer_flip": null,
 "dealer_wc": 0.1499,
-"dealer_wp": -0.0266
+"dealer_wp": -0.0266,
+"tr": 1717.0,
+"atr5": 1615.0
 },
 {
 "date": "2026-06-16",
@@ -2308,7 +2610,9 @@
 "dealer_gex": 11.877,
 "dealer_flip": 44975.7,
 "dealer_wc": 0.1468,
-"dealer_wp": -0.0955
+"dealer_wp": -0.0955,
+"tr": 735.0,
+"atr5": 1428.0
 },
 {
 "date": "2026-06-17",
@@ -2323,7 +2627,9 @@
 "dealer_gex": 1.436,
 "dealer_flip": null,
 "dealer_wc": 0.0481,
-"dealer_wp": 0.023
+"dealer_wp": 0.023,
+"tr": 659.0,
+"atr5": 1252.0
 },
 {
 "date": "2026-06-18",
@@ -2338,7 +2644,9 @@
 "dealer_gex": 11.209,
 "dealer_flip": null,
 "dealer_wc": 0.1208,
-"dealer_wp": 0.0082
+"dealer_wp": 0.0082,
+"tr": 1110.0,
+"atr5": 1182.2
 },
 {
 "date": "2026-06-22",
@@ -2353,7 +2661,9 @@
 "dealer_gex": 4.335,
 "dealer_flip": null,
 "dealer_wc": 0.0908,
-"dealer_wp": 0.0097
+"dealer_wp": 0.0097,
+"tr": 1707.0,
+"atr5": 1185.6
 },
 {
 "date": "2026-06-23",
@@ -2368,7 +2678,9 @@
 "dealer_gex": 10.75,
 "dealer_flip": null,
 "dealer_wc": 0.0736,
-"dealer_wp": 0.0451
+"dealer_wp": 0.0451,
+"tr": 1307.0,
+"atr5": 1103.6
 },
 {
 "date": "2026-06-24",
@@ -2383,7 +2695,9 @@
 "dealer_gex": 2.29,
 "dealer_flip": 49936.7,
 "dealer_wc": -0.0184,
-"dealer_wp": 0.1034
+"dealer_wp": 0.1034,
+"tr": 1538.0,
+"atr5": 1264.2
 },
 {
 "date": "2026-06-25",
@@ -2398,7 +2712,9 @@
 "dealer_gex": 12.472,
 "dealer_flip": null,
 "dealer_wc": 0.0872,
-"dealer_wp": 0.0633
+"dealer_wp": 0.0633,
+"tr": 906.0,
+"atr5": 1313.6
 },
 {
 "date": "2026-06-26",
@@ -2413,7 +2729,9 @@
 "dealer_gex": 0.103,
 "dealer_flip": 44706.5,
 "dealer_wc": -0.0465,
-"dealer_wp": 0.0397
+"dealer_wp": 0.0397,
+"tr": 2280.0,
+"atr5": 1547.6
 },
 {
 "date": "2026-06-29",
@@ -2428,7 +2746,9 @@
 "dealer_gex": 6.403,
 "dealer_flip": null,
 "dealer_wc": 0.0441,
-"dealer_wp": 0.0684
+"dealer_wp": 0.0684,
+"tr": 1264.0,
+"atr5": 1459.0
 },
 {
 "date": "2026-06-30",
@@ -2443,7 +2763,9 @@
 "dealer_gex": 7.983,
 "dealer_flip": null,
 "dealer_wc": 0.0334,
-"dealer_wp": 0.0554
+"dealer_wp": 0.0554,
+"tr": 1333.0,
+"atr5": 1464.2
 },
 {
 "date": "2026-07-01",
@@ -2458,7 +2780,9 @@
 "dealer_gex": 1.468,
 "dealer_flip": null,
 "dealer_wc": 0.0134,
-"dealer_wp": 0.0368
+"dealer_wp": 0.0368,
+"tr": 965.0,
+"atr5": 1349.6
 },
 {
 "date": "2026-07-02",
@@ -2473,7 +2797,9 @@
 "dealer_gex": 8.51,
 "dealer_flip": null,
 "dealer_wc": 0.0191,
-"dealer_wp": 0.0929
+"dealer_wp": 0.0929,
+"tr": 1451.0,
+"atr5": 1458.6
 },
 {
 "date": "2026-07-03",
@@ -2488,7 +2814,9 @@
 "dealer_gex": -0.359,
 "dealer_flip": 46505.1,
 "dealer_wc": -0.0316,
-"dealer_wp": 0.0422
+"dealer_wp": 0.0422,
+"tr": 1476.0,
+"atr5": 1297.8
 },
 {
 "date": "2026-07-06",
@@ -2503,7 +2831,9 @@
 "dealer_gex": 9.248,
 "dealer_flip": null,
 "dealer_wc": 0.0525,
-"dealer_wp": 0.0829
+"dealer_wp": 0.0829,
+"tr": 966.0,
+"atr5": 1238.2
 },
 {
 "date": "2026-07-07",
@@ -2518,7 +2848,9 @@
 "dealer_gex": 9.235,
 "dealer_flip": null,
 "dealer_wc": 0.0458,
-"dealer_wp": 0.0474
+"dealer_wp": 0.0474,
+"tr": 1588.0,
+"atr5": 1289.2
 },
 {
 "date": "2026-07-08",
@@ -2533,7 +2865,9 @@
 "dealer_gex": 4.921,
 "dealer_flip": null,
 "dealer_wc": 0.0507,
-"dealer_wp": 0.0784
+"dealer_wp": 0.0784,
+"tr": 720.0,
+"atr5": 1240.2
 },
 {
 "date": "2026-07-09",
@@ -2548,7 +2882,9 @@
 "dealer_gex": 15.856,
 "dealer_flip": null,
 "dealer_wc": 0.1134,
-"dealer_wp": 0.0834
+"dealer_wp": 0.0834,
+"tr": 827.0,
+"atr5": 1115.4
 },
 {
 "date": "2026-07-13",
@@ -2563,7 +2899,9 @@
 "dealer_gex": 5.549,
 "dealer_flip": null,
 "dealer_wc": 0.1166,
-"dealer_wp": 0.0037
+"dealer_wp": 0.0037,
+"tr": 1127.0,
+"atr5": 1045.6
 },
 {
 "date": "2026-07-14",
@@ -2578,7 +2916,9 @@
 "dealer_gex": 17.885,
 "dealer_flip": null,
 "dealer_wc": 0.1215,
-"dealer_wp": 0.0697
+"dealer_wp": 0.0697,
+"tr": 1765.0,
+"atr5": 1205.4
 },
 {
 "date": "2026-07-15",
@@ -2593,7 +2933,9 @@
 "dealer_gex": 9.704,
 "dealer_flip": null,
 "dealer_wc": 0.3026,
-"dealer_wp": 0.1407
+"dealer_wp": 0.1407,
+"tr": 1027.0,
+"atr5": 1093.2
 },
 {
 "date": "2026-07-16",
@@ -2608,7 +2950,9 @@
 "dealer_gex": 19.882,
 "dealer_flip": null,
 "dealer_wc": 0.1361,
-"dealer_wp": 0.1408
+"dealer_wp": 0.1408,
+"tr": 1057.0,
+"atr5": 1160.6
 },
 {
 "date": "2026-07-17",
@@ -2623,7 +2967,9 @@
 "dealer_gex": 5.853,
 "dealer_flip": null,
 "dealer_wc": 0.0021,
-"dealer_wp": 0.1744
+"dealer_wp": 0.1744,
+"tr": 3173.0,
+"atr5": 1629.8
 },
 {
 "date": "2026-07-20",
@@ -2638,7 +2984,9 @@
 "dealer_gex": 11.013,
 "dealer_flip": null,
 "dealer_wc": 0.0516,
-"dealer_wp": 0.1618
+"dealer_wp": 0.1618,
+"tr": 1043.0,
+"atr5": 1613.0
 },
 {
 "date": "2026-07-21",
@@ -2653,7 +3001,9 @@
 "dealer_gex": 12.825,
 "dealer_flip": null,
 "dealer_wc": 0.0887,
-"dealer_wp": 0.0579
+"dealer_wp": 0.0579,
+"tr": 1763.0,
+"atr5": 1612.6
 },
 {
 "date": "2026-07-22",
@@ -2668,7 +3018,9 @@
 "dealer_gex": 5.305,
 "dealer_flip": null,
 "dealer_wc": 0.0988,
-"dealer_wp": 0.0817
+"dealer_wp": 0.0817,
+"tr": 987.0,
+"atr5": 1604.6
 },
 {
 "date": "2026-07-23",
@@ -2683,7 +3035,9 @@
 "dealer_gex": 11.43,
 "dealer_flip": null,
 "dealer_wc": 0.0832,
-"dealer_wp": 0.0626
+"dealer_wp": 0.0626,
+"tr": 894.0,
+"atr5": 1572.0
 },
 {
 "date": "2026-07-24",
@@ -2698,7 +3052,9 @@
 "dealer_gex": 4.094,
 "dealer_flip": null,
 "dealer_wc": 0.0933,
-"dealer_wp": 0.0689
+"dealer_wp": 0.0689,
+"tr": 1290.0,
+"atr5": 1195.4
 },
 {
 "date": "2026-07-27",
@@ -2713,7 +3069,9 @@
 "dealer_gex": 4.553,
 "dealer_flip": null,
 "dealer_wc": 0.0205,
-"dealer_wp": 0.072
+"dealer_wp": 0.072,
+"tr": 907.0,
+"atr5": 1168.2
 },
 {
 "date": "2026-07-28",
@@ -2728,7 +3086,9 @@
 "dealer_gex": 8.748,
 "dealer_flip": 44522.8,
 "dealer_wc": -0.0237,
-"dealer_wp": 0.0998
+"dealer_wp": 0.0998,
+"tr": 2391.0,
+"atr5": 1293.8
 },
 {
 "date": "2026-07-29",
@@ -2743,7 +3103,9 @@
 "dealer_gex": 6.862,
 "dealer_flip": null,
 "dealer_wc": 0.0585,
-"dealer_wp": 0.233
+"dealer_wp": 0.233,
+"tr": 2628.0,
+"atr5": 1622.0
 },
 {
 "date": "2026-07-30",
@@ -2758,7 +3120,9 @@
 "dealer_gex": 7.581,
 "dealer_flip": null,
 "dealer_wc": 0.0727,
-"dealer_wp": 0.1002
+"dealer_wp": 0.1002,
+"tr": 1565.0,
+"atr5": 1756.2
 },
 {
 "date": "2026-07-31",
@@ -2773,7 +3137,9 @@
 "dealer_gex": 5.424,
 "dealer_flip": null,
 "dealer_wc": 0.108,
-"dealer_wp": 0.106
+"dealer_wp": 0.106,
+"tr": 3681.0,
+"atr5": 2234.4
 },
 {
 "date": "2026-08-03",
@@ -2788,7 +3154,9 @@
 "dealer_gex": 6.286,
 "dealer_flip": null,
 "dealer_wc": 0.075,
-"dealer_wp": 0.0453
+"dealer_wp": 0.0453,
+"tr": 847.0,
+"atr5": 2222.4
 },
 {
 "date": "2026-08-04",
@@ -2803,7 +3171,9 @@
 "dealer_gex": 2.093,
 "dealer_flip": 42566.7,
 "dealer_wc": 0.041,
-"dealer_wp": -0.0284
+"dealer_wp": -0.0284,
+"tr": 1237.0,
+"atr5": 1991.6
 },
 {
 "date": "2026-08-05",
@@ -2818,7 +3188,9 @@
 "dealer_gex": 7.578,
 "dealer_flip": null,
 "dealer_wc": 0.1038,
-"dealer_wp": 0.123
+"dealer_wp": 0.123,
+"tr": 1566.0,
+"atr5": 1779.2
 },
 {
 "date": "2026-08-06",
@@ -2833,7 +3205,9 @@
 "dealer_gex": 7.563,
 "dealer_flip": null,
 "dealer_wc": 0.0301,
-"dealer_wp": 0.0875
+"dealer_wp": 0.0875,
+"tr": 671.0,
+"atr5": 1600.4
 },
 {
 "date": "2026-08-07",
@@ -2848,7 +3222,9 @@
 "dealer_gex": 7.833,
 "dealer_flip": null,
 "dealer_wc": 0.0924,
-"dealer_wp": 0.1559
+"dealer_wp": 0.1559,
+"tr": 821.0,
+"atr5": 1028.4
 },
 {
 "date": "2026-08-10",
@@ -2863,7 +3239,9 @@
 "dealer_gex": 7.444,
 "dealer_flip": null,
 "dealer_wc": 0.048,
-"dealer_wp": 0.0623
+"dealer_wp": 0.0623,
+"tr": 870.0,
+"atr5": 1033.0
 },
 {
 "date": "2026-08-11",
@@ -2878,7 +3256,9 @@
 "dealer_gex": 9.246,
 "dealer_flip": null,
 "dealer_wc": 0.0522,
-"dealer_wp": 0.0361
+"dealer_wp": 0.0361,
+"tr": 630.0,
+"atr5": 911.6
 },
 {
 "date": "2026-08-12",
@@ -2893,7 +3273,9 @@
 "dealer_gex": 10.685,
 "dealer_flip": null,
 "dealer_wc": 0.1106,
-"dealer_wp": 0.1473
+"dealer_wp": 0.1473,
+"tr": 471.0,
+"atr5": 692.6
 },
 {
 "date": "2026-08-13",
@@ -2908,7 +3290,9 @@
 "dealer_gex": 12.611,
 "dealer_flip": null,
 "dealer_wc": 0.045,
-"dealer_wp": 0.0971
+"dealer_wp": 0.0971,
+"tr": 722.0,
+"atr5": 702.8
 },
 {
 "date": "2026-08-14",
@@ -2923,7 +3307,9 @@
 "dealer_gex": 9.975,
 "dealer_flip": null,
 "dealer_wc": 0.1067,
-"dealer_wp": 0.1028
+"dealer_wp": 0.1028,
+"tr": 794.0,
+"atr5": 697.4
 },
 {
 "date": "2026-08-17",
@@ -2938,7 +3324,9 @@
 "dealer_gex": 10.961,
 "dealer_flip": null,
 "dealer_wc": 0.0876,
-"dealer_wp": 0.0322
+"dealer_wp": 0.0322,
+"tr": 402.0,
+"atr5": 603.8
 },
 {
 "date": "2026-08-18",
@@ -2953,7 +3341,9 @@
 "dealer_gex": 7.552,
 "dealer_flip": null,
 "dealer_wc": 0.0396,
-"dealer_wp": 0.0266
+"dealer_wp": 0.0266,
+"tr": 907.0,
+"atr5": 659.2
 },
 {
 "date": "2026-08-19",
@@ -2968,7 +3358,9 @@
 "dealer_gex": 5.531,
 "dealer_flip": null,
 "dealer_wc": 0.1713,
-"dealer_wp": -0.0037
+"dealer_wp": -0.0037,
+"tr": 877.0,
+"atr5": 740.4
 },
 {
 "date": "2026-08-20",
@@ -2983,7 +3375,9 @@
 "dealer_gex": 7.051,
 "dealer_flip": null,
 "dealer_wc": 0.0486,
-"dealer_wp": 0.0325
+"dealer_wp": 0.0325,
+"tr": 674.0,
+"atr5": 730.8
 },
 {
 "date": "2026-08-21",
@@ -2998,7 +3392,9 @@
 "dealer_gex": 5.671,
 "dealer_flip": null,
 "dealer_wc": 0.1218,
-"dealer_wp": 0.0361
+"dealer_wp": 0.0361,
+"tr": 728.0,
+"atr5": 717.6
 },
 {
 "date": "2026-08-24",
@@ -3013,7 +3409,9 @@
 "dealer_gex": 7.193,
 "dealer_flip": null,
 "dealer_wc": 0.0776,
-"dealer_wp": 0.0293
+"dealer_wp": 0.0293,
+"tr": 683.0,
+"atr5": 773.8
 },
 {
 "date": "2026-08-25",
@@ -3028,7 +3426,9 @@
 "dealer_gex": 5.082,
 "dealer_flip": null,
 "dealer_wc": 0.0229,
-"dealer_wp": 0.0265
+"dealer_wp": 0.0265,
+"tr": 949.0,
+"atr5": 782.2
 },
 {
 "date": "2026-08-26",
@@ -3063,7 +3463,8 @@
 "high": 46027.0,
 "low": 44865.0,
 "close": 46011.0,
-"tr": 1162.0
+"tr": 1162.0,
+"atr5": 839.2
 },
 {
 "date": "2026-08-27",
@@ -3098,7 +3499,8 @@
 "high": 46517.0,
 "low": 46006.0,
 "close": 46078.0,
-"tr": 511.0
+"tr": 511.0,
+"atr5": 806.6
 },
 {
 "date": "2026-08-28",
@@ -3133,7 +3535,8 @@
 "high": 46580.0,
 "low": 46215.0,
 "close": 46357.0,
-"tr": 502.0
+"tr": 502.0,
+"atr5": 761.4
 },
 {
 "date": "2026-08-31",
@@ -3168,7 +3571,8 @@
 "high": 46060.0,
 "low": 45415.0,
 "close": 45983.0,
-"tr": 942.0
+"tr": 942.0,
+"atr5": 813.2
 },
 {
 "date": "2026-09-01",
@@ -4755,5 +5159,5 @@
 "atr5": 2009.4
 }
 ],
-"updatedAt": "2026-11-09T10:12:29+08:00"
+"updatedAt": "2026-11-09T10:59:58+08:00"
 }
