@@ -247,6 +247,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>欄位會自動比對：契約、到期月份(週別)、契約到期日（若無則依代碼推算：<code>YYYYMM</code>＝第三個週三、<code>Wn</code>＝第 n 個週三、<code>Fn</code>＝第 n 個週五）、履約價、買賣權、結算價、未沖銷契約數。</li>
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
+        <li>牆與磁吸的回測（483 日）：隔日收盤落在 Put Wall～Call Wall 之間的比例 57%，和「以現價為中心、同樣寬度的區間」60% 差不多；觸及 Call Wall 後當天收回的只有 33%、Put Wall 31%。到期日開盤比前一日收盤更靠近「±3% 內最大未平倉」的比例 39%、最大痛點 34%，都低於隨機價位的 44%。所以牆與最大未平倉只當作「避險量集中的價位」參考，不當成支撐、壓力或磁吸；停損與價差寬度以 ATR 與燈號的預估波幅為準。</li>
         <li>回測燈號：依當日收盤是否在「Call 多、Put 空」合併 Flip 之下分紅／綠兩級（找不到 Flip 時看總 GEX 正負）。回測發現 Flip 之上不論距離遠近、GEX 百分位高低，隔日波動差異都不大，所以不另設黃燈。預估明日波幅來自回測的迴歸：隔日真實波幅% ＝ 基準 ＋ 係數 × 近 5 日 ATR% ＋ 紅燈加成，每次重跑回測會自動更新係數。</li>
         <li>方向假設預設採「Call 多、Put 空」。2024/11～2026/11 共 483 個交易日的回測：期貨收在此假設的 Flip 之下時，隔日真實波幅平均 2.43%、漲跌 ≥1.5% 的機率 37%；在 Flip 之上時為 1.78%、24%。扣除「近 5 日 ATR」本身的波動延續效果後，Flip 之下仍多出約 0.7 個百分點（t≈3.4），是統計上站得住的訊號。「自營商實際淨部位」以期交所三大法人的自營商 Call、Put 淨未平倉比例當方向權重，但它約 8 成的日子算不出 Flip，扣除 ATR 效果後也沒有額外預測力，所以保留作參考對照。完整回測在 repo 的 backtest/ 資料夾。</li>
         <li>Flip：固定 OI 與各履約價 IV，在 ±掃描範圍內 400 個價位重新計算 Γ，取總 GEX 穿越 0 且最接近現價的位置（線性內插）。</li>
@@ -420,6 +421,21 @@ ${est}<p class="bt-tip">${tip}</p>
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
 }
 
+/* 燈號實績：用每日歷史（Call 多、Put 空的合併 Flip）回看每個燈號隔日的實際波動 */
+function btBucketOf(it){const f=it.naive_flip,g=it.naive_gex;if(f!=null)return it.F<f?"red":"green";if(g==null)return null;return g<0?"red":"green";}
+function btTrack(items){
+  const o={red:{n:0,tr:0,big:0},green:{n:0,tr:0,big:0}};
+  for(let i=0;i<items.length-1;i++){const a=items[i],b=items[i+1],k=btBucketOf(a);
+    if(!k||!(a.close>0&&b.high>0&&b.low>0&&b.close>0))continue;
+    const tr=Math.max(b.high-b.low,Math.abs(b.high-a.close),Math.abs(b.low-a.close))/a.close*100;
+    o[k].n++;o[k].tr+=tr;if(Math.abs(b.close/a.close-1)>=0.015)o[k].big++;}
+  for(const k of ["red","green"]){const x=o[k];x.tr=x.n?x.tr/x.n:null;x.big=x.n?x.big/x.n:null;}
+  return o;
+}
+function btTrackText(items){const t=btTrack(items),f=x=>x==null?"—":x.toFixed(2)+"%",p=x=>x==null?"—":Math.round(x*100)+"%";
+  if(!t.red.n&&!t.green.n)return "";
+  return `燈號實績（近 ${t.red.n+t.green.n} 日）：紅燈 ${t.red.n} 天，隔日平均真實波幅 ${f(t.red.tr)}、大波動 ${p(t.red.big)}；綠燈 ${t.green.n} 天，${f(t.green.tr)}、${p(t.green.big)}。`;}
+
 /* ---------- render ---------- */
 let profileChart,strikeChart;
 const fmt=(v,d=0)=>v===null||v===undefined||!isFinite(v)?"—":v.toLocaleString("zh-TW",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -469,7 +485,7 @@ function render(){
   const near=fl!==null&&Math.abs(S-fl)<0.5*sdRef;
   let pill,read;
   if(near){card.classList.add("near");pill="貼近 Flip｜體制轉換區";read=`現價距 Flip 不到半個日波動（±${fmt(Math.round(sdRef/10)*10,0)} 點），避險方向隨時可能翻轉，波動最不穩定。`;}
-  else if(gNow>=0){card.classList.add("pos");pill="正 Gamma｜波動壓抑";read=`造市商指數每漲 100 點需賣出約 ${fmt(Math.abs(hNow),0)} 口大台，跌則買回，價格傾向在 ${W.put?fmt(W.put,0):"下方"}～${W.call?fmt(W.call,0):"上方"} 間來回。`;}
+  else if(gNow>=0){card.classList.add("pos");pill="正 Gamma｜波動壓抑";read=`造市商指數每漲 100 點需賣出約 ${fmt(Math.abs(hNow),0)} 口大台，跌則買回，盤勢偏區間。Put Wall ${W.put?fmt(W.put,0):"—"}／Call Wall ${W.call?fmt(W.call,0):"—"} 是避險量最大的價位，但回測觸及後只有約 3 成收回，不要當成穩定的支撐壓力。`;}
   else{card.classList.add("neg");pill="負 Gamma｜波動放大";read=`造市商指數每跌 100 點需再賣出約 ${fmt(Math.abs(hNow),0)} 口大台，漲則追買，趨勢容易延續${fl?`，站回 ${fmt(fl,0)} 前波動偏大`:""}。`;}
   $("regimePill").textContent=pill;$("readout").textContent=read;
 
@@ -500,7 +516,7 @@ function render(){
         <ol>${adv.plan.map(t=>`<li>${t}</li>`).join("")}</ol>
       </div>
       <dl class="kv"><dt>本區塊 GEX（每 1%）</dt><dd>${sgn(gg,2)} 億</dd><dt>本區塊 Flip</dt><dd>${f===null?"區間內無":fmt(f,0)}</dd><dt>本區塊 Call / Put Wall</dt><dd>${w.call?fmt(w.call,0):"—"} / ${w.put?fmt(w.put,0):"—"}</dd><dt>未平倉合計</dt><dd>${fmt(oi,0)} 口</dd></dl>
-      <div class="tablewrap"><table class="mini"><thead><tr><th>到期</th><th>結算日｜剩餘</th><th>磁吸</th><th>痛點</th></tr></thead><tbody>${
+      <div class="tablewrap"><table class="mini"><thead><tr><th>到期</th><th>結算日｜剩餘</th><th>最大未平倉</th><th>痛點</th></tr></thead><tbody>${
         expInfo.map(e=>`<tr><td>${e.code}</td><td>${fmtD(e.exp).slice(5)}（${wk(e.exp)}）${e.days.toFixed(1)}天</td><td>${e.pin?fmt(e.pin):"—"}</td><td>${e.maxPain?fmt(e.maxPain):"—"}</td></tr>`).join("")}</tbody></table></div>`;
     gc.appendChild(el);
   }
@@ -693,10 +709,10 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
   let verdict;
   const flipTxt=fAll==null?"掃描範圍內沒有合併 Flip":`現價${S>=fAll?"高於":"低於"}合併 Flip ${P(fAll)} 約 ${fmt(Math.abs(S-fAll),0)} 點（${fmt(Math.abs(z),1)} 個日波動）`;
   const turnsNeg=gAll>=0&&gPost<0,turnsPos=gAll<0&&gPost>=0;
-  if(regime==="pos")verdict=`${flipTxt}，造市商逆勢避險，${turnsNeg?`結算前做區間${expiring?`（偏向 ${P(next.pin)} 磁吸）`:""}、結算後改順勢`:`${expiring?`結算前偏向 ${P(next.pin)} 磁吸，`:""}以區間操作為主`}。${roll}`;
+  if(regime==="pos")verdict=`${flipTxt}，造市商逆勢避險，${turnsNeg?`結算前做區間、結算後改順勢`:`以區間操作為主`}。${roll}`;
   else if(regime==="neg")verdict=`${flipTxt}，造市商順勢避險、波動放大，以順勢為主，${fAll!=null?"反彈到 Flip 前都算弱勢反彈":`整段價格都是負 Gamma，以 Call Wall ${P(callW)} 作為轉強關卡`}。${roll}`;
   else verdict=`${flipTxt}，正負 Gamma 交界，最容易假突破，先等方向。${roll}`;
-  const levels=[["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["磁吸 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`],[atrReal?"近 5 日 ATR":"ATR（估）",`${fmt(r10(A),0)} 點｜停損 ${fmt(half,0)}／價差寬 ${fmt(width,0)}`]];
+  const levels=[["合併 Flip",P(fAll)],["結算後 Flip",P(fPost)],["日波動 / 到期波動",`±${fmt(r10(sd),0)} / ±${fmt(r10(sT),0)} 點`],["最大未平倉 / 最大痛點",`${P(next.pin)} / ${P(next.maxPain)}`],[atrReal?"近 5 日 ATR":"ATR（估）",`${fmt(r10(A),0)} 點｜停損 ${fmt(half,0)}／價差寬 ${fmt(width,0)}`]];
   // 4. 具體操作：期貨價位（四捨五入到 10 點）＋本區塊最近到期的選擇權組合（以結算價估算）
   const plan=[];
   const W2=width;
@@ -768,7 +784,7 @@ function renderHistory(){
               y:{ticks:{color:css("--muted"),callback:v=>fmt(v,0)},grid:{color:css("--line")}}}}});
   const last=items.at(-1),lf=last[`${mode}_flip`];
   const posDays=regime.filter(r=>r===true).length,tot=regime.filter(r=>r!==null).length;
-  note.textContent=`近 ${tot} 個交易日中，${posDays} 天為正 Gamma（收在合併 Flip 之上，或整段都是正 Gamma），${tot-posDays} 天為負 Gamma。最新 ${last.date}：結算價 ${fmt(last.F,0)}，Flip ${lf==null?"區間內無":fmt(lf,0)}。點的顏色：綠＝正 Gamma 日，紅＝負 Gamma 日。`;
+  note.textContent=`近 ${tot} 個交易日中，${posDays} 天為正 Gamma（收在合併 Flip 之上，或整段都是正 Gamma），${tot-posDays} 天為負 Gamma。最新 ${last.date}：結算價 ${fmt(last.F,0)}，Flip ${lf==null?"區間內無":fmt(lf,0)}。點的顏色：綠＝正 Gamma 日，紅＝負 Gamma 日。`+" "+btTrackText(items);
 }
 
 /* ---------- wiring ---------- */

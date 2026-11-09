@@ -286,17 +286,17 @@ function render(){
   $("hAtr").textContent=atrReal?`${fmt(atrReal,0)} 點`:`約 ${fmt(Math.round(atr/10)*10,0)}（估）`;
   const z=fl===null?null:Math.abs(S-fl)/sdRef;
   $("hRead").textContent=reg==="near"?`現價離 Flip 不到半個日波動，避險方向隨時翻轉，先等收盤方向。`
-    :reg==="pos"?`現價在 Flip 之上${z!=null?` ${fmt(z,1)} 個日波動`:""}。造市商每漲 100 點賣出約 ${fmt(Math.abs(hNow),0)} 口大台、跌則買回，偏區間；${W.put?P(W.put):"下方"}～${W.call?P(W.call):"上方"} 是主要範圍。`
+    :reg==="pos"?`現價在 Flip 之上${z!=null?` ${fmt(z,1)} 個日波動`:""}。造市商每漲 100 點賣出約 ${fmt(Math.abs(hNow),0)} 口大台、跌則買回，偏區間；但 ${W.put?P(W.put):"—"}／${W.call?P(W.call):"—"} 兩道牆回測觸及後只有約 3 成收回，不是可靠的支撐壓力。`
     :`現價在 Flip 之下${z!=null?` ${fmt(z,1)} 個日波動`:""}。造市商每跌 100 點再賣出約 ${fmt(Math.abs(hNow),0)} 口大台，趨勢容易延續${fl!=null?`，站回 ${P(fl)} 前偏弱`:""}。`;
 
   // ladder
   const items=[{n:"現價（台指期）",v:S,cls:"spot"}];
   if(fl!=null)items.push({n:"合併 Flip",s:"正負 Gamma 分界",v:fl,cls:"flip"});
-  if(W.call)items.push({n:"Call Wall",s:"上方壓力",v:W.call});
-  if(W.put)items.push({n:"Put Wall",s:"下方支撐／加速點",v:W.put});
+  if(W.call)items.push({n:"Call Wall",s:"Call Gamma 最大（回測非可靠壓力）",v:W.call});
+  if(W.put)items.push({n:"Put Wall",s:"Put Gamma 最大（回測非可靠支撐）",v:W.put});
   const wk2=["W","F"].map(k=>blocks[k]).filter(Boolean).sort((a,b)=>a.adv.next.days-b.adv.next.days)[0];
   if(wk2){const nx=wk2.adv.next;
-    if(nx.pin)items.push({n:`${nx.code} 磁吸`,s:`${fmtD(nx.exp).slice(5)} 結算，剩 ${nx.days.toFixed(1)} 天`,v:nx.pin});
+    if(nx.pin)items.push({n:`${nx.code} 最大未平倉`,s:`${fmtD(nx.exp).slice(5)} 結算，剩 ${nx.days.toFixed(1)} 天`,v:nx.pin});
     if(wk2.adv.fPost!=null)items.push({n:"結算後 Flip",s:`${nx.code} 結算後的合併 Flip`,v:wk2.adv.fPost});}
   items.sort((a,b)=>b.v-a.v);
   $("ladder").innerHTML=items.map(it=>{const zc=fl==null?(gNow>=0?"pos":"neg"):it.v>=fl?"pos":"neg";const d=it.v-S;
@@ -361,7 +361,7 @@ function renderHistory(){
       scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:5,maxRotation:0},grid:{display:false}},y:{ticks:{color:css("--muted"),maxTicksLimit:6,callback:v=>fmt(v,0)},grid:{color:css("--line")}}}}});
   const reg=items.map((it,i)=>{const g=it[`${mode}_gex`];return flips[i]!=null?it.F>=flips[i]:g==null?null:g>=0;});
   const pos=reg.filter(v=>v===true).length,tot=reg.filter(v=>v!=null).length;
-  $("histNote").textContent=`藍線為台指期、紫色虛線為合併 Flip。近 ${tot} 日有 ${pos} 天為正 Gamma（綠點），${tot-pos} 天為負 Gamma（紅點）；沒有 Flip 的日子依總 GEX 正負判斷。`;
+  $("histNote").textContent=`藍線為台指期、紫色虛線為合併 Flip。近 ${tot} 日有 ${pos} 天為正 Gamma（綠點），${tot-pos} 天為負 Gamma（紅點）；沒有 Flip 的日子依總 GEX 正負判斷。`+" "+btTrackText(history.slice(-120));
 }
 
 /* ---------- export ---------- */
