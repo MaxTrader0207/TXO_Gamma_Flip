@@ -279,6 +279,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
         <li>賣方履約價的回測（2021/10～2026/11）：每天收盤以最後最佳買價賣出最近到期的 OTM Call＋Put，持有到結算，另扣手續費＋稅 0.5 點／腳；履約價距離 = k × 預估波幅 × √持有交易日數，只做綠燈日。標準 k=2.5：663 筆平均每組 +3.3 點（t≈5.6），2021～2026 每一年都是正的（含 2022 空頭年 +1.5 點），但 2023 年只有 +0.6 點；保守 k=3.0 每組平均 +2.1 點。沒有買價的深價外檔位無法成交，筆數比用結算價時少約 2 成。紅燈日同規則虧損；轉紅燈出場、3 倍停損、加保護腳的價差都更差。完整結果在 backtest/strategy.md 與 backtest/board.md。</li>
+        <li>夜盤燈號接進交易規則的回測（2021/10～2026/11）：賣方「日盤綠燈收盤就賣」平均 +3.3 點／筆（t≈5.6）仍是最好；改成夜盤轉紅隔天開盤買回降到 +2.1（多付一次買賣成本）；改到隔天開盤才賣，只看夜盤綠燈 +0.7（2025 年出現單筆 −2,148 點），日盤＋夜盤都綠 +3.2 但回撤較大。買方「夜盤紅燈＋收低，隔天開盤買 Call」+28 點，不如收盤買的 +63 點。結論：夜盤燈號用來調整當天的波動預期與部位大小，不改變進出場時點。完整結果在 backtest/rules2.md。</li>
         <li>夜盤更新：每天早上 07:20、07:50 抓台指期夜盤收盤，用前一日盤的選擇權結構重新判斷期貨在合併 Flip 之上或之下，燈號區塊最上方會顯示夜盤燈號與今天日盤的預估波幅；燈號在夜盤改變時以黃框標示。5 年回測（1,226 天）：日盤綠、夜盤跌破 Flip 的 187 天，隔天日盤真實波幅 1.38%，高於維持綠燈的 1.16%；日盤紅、夜盤也紅的 205 天最大，1.67%。同時考慮兩者時，夜盤燈號的解釋力（t≈5.8）高於日盤燈號（t≈2.2）。</li>
         <li>各區塊標題下方列出每個到期契約的結算日與剩餘天數：「剩 N 天」是從資料日算起的日曆天，「交易日」以週一至週五計算、未扣國定假日；剩 1 個交易日以內會以黃色標示。</li>
         <li>均線跌破的回測（2021/10～2026/11，均線用加權指數）：近期第一次跌破 30／60／100 日均線（跌破前連續 10 日站上）、且今天均線高於昨天時，收盤以最後最佳賣價買當週週選價外 1%。買 Call 持有到結算 29 次、平均 +210 點（t≈2.1），但前段（2021～2024/4）平均只有 +19 點，2022 空頭年 4 次全輸，獲利集中在 2024、2026 年；買 Put 幾乎都賠。紅燈時跌破買 Call 26 次平均 +247 點，綠燈 3 次全輸。完整結果在 backtest/ma.md。</li>
@@ -453,7 +454,7 @@ function btHtml(bt,F,atr,rows,val){
     :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
   return `${btNightHtml(bt,NIGHT,F)}<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
 <p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
-${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt,F,rows,val)}${btMaHtml(bt,F,rows,val)}
+${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btVolHtml(bt)}${btBuyHtml(bt,F,rows,val)}${btMaHtml(bt,F,rows,val)}
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
 }
 
@@ -553,6 +554,18 @@ function btBuyHtml(bt,F,rows,val){
   const none=`<span>回測條件不成立，<b>不做買方</b>。對照：其他日子買價平跨式 ${st(B.straddleOther.full)}；綠燈下跌日買 Call ${st(B.callGreenDown.full)}；買價外勒式 ${st(B.otm.full)}。</span>`;
   return `<div class="bt-sell bt-buy"><div><b>買方條件（回測）</b>：${why}。</div>${ideas.length?`<ul class="bt-tiers">${ideas.join("")}</ul>`:none}
 <span class="bt-src">5 年回測（含 2022 空頭年）下，買價平跨式扣掉買賣價差後已不顯著；紅燈下跌買 Call 仍為正，但 2022 年是虧損的。買方只在紅燈時有機會：紅燈且波動放大時實際波動常大於權利金隱含的波動，跨式賺錢；紅燈當天下跌後常有反彈，但這段期間台股大多頭，買 Call 的結果有多頭行情加持。價外勒式幾乎都賠，隔日就出場也比持有到結算差。</span></div>`;
+}
+
+/* 波動指標（回測）：VRP 與 Put 偏斜，作為賣方的風險提示（不改變進場規則） */
+function btVolHtml(bt){
+  const v=bt.vol,R=bt.stats&&bt.stats._rules2;if(!v||!R)return "";
+  const p1=x=>(x*100).toFixed(1),sg=x=>(x>=0?"+":"")+p1(x),f1=x=>(+x).toFixed(1),r=R.results||{};
+  const g=k=>Object.keys(r).find(x=>x.startsWith(k)),st=k=>{const s=r[g(k)];return s?`${s.n} 筆平均 ${s.avg>=0?"+":""}${f1(s.avg)} 點、最大回撤 ${Math.round(s.dd)}`:"—";};
+  const hiVrp=v.vrp!=null&&v.vrp>R.vrpMedian,hiSkew=v.skewPct!=null&&v.skewPct>=0.8;
+  const warn=hiSkew?`<b class="hl">偏斜在近 60 日高檔（第 ${Math.round(v.skewPct*100)} 百分位）</b>：市場正在買下檔保護，回測這類日子賣方平均較差（${st("V3'")}，2026 年為負），賣方口數減半或改保守級。`
+    :`偏斜不在高檔（第 ${v.skewPct==null?"—":Math.round(v.skewPct*100)} 百分位）。`;
+  return `<div class="bt-sell bt-vol"><div><b>波動指標</b>：30 天價平 IV ${v.iv30==null?"—":p1(v.iv30)+"%"}、近 20 日實現波動 ${v.rv20==null?"—":p1(v.rv20)+"%"}，VRP ${v.vrp==null?"—":sg(v.vrp)+" 個百分點"}（5 年中位數 ${sg(R.vrpMedian)}）${hiVrp?"，權利金相對偏貴":"，權利金不算貴"}；Put 偏斜 ${v.skew==null?"—":p1(v.skew)+" 個百分點"}。${warn}</div>
+<span class="bt-src">回測 ${R.from}～${R.to}（賣方標準級，綠燈收盤賣）：全部 ${st("S1")}；只在 VRP 高於中位數時賣 ${st("V2")}；偏斜不在高檔 ${st("V3 ")}。過濾後每筆平均略好、回撤明顯變小，但交易次數減少，總獲利反而較低，所以列為風險提示，不改變進場規則。VRP 越高，隔天實際波動也越大（迴歸 t≈${f1(R.reg?.t_vrp||0)}），代表隱含波動有包含資訊。</span></div>`;
 }
 
 /* 均線跌破（回測）：30／60／100MA 近期第一次跌破且均線上揚 → 買當週價外 1% Call；買 Put 回測虧損 */

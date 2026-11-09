@@ -371,7 +371,42 @@ def gex_pct(values, v):
     return sum(1 for x in win if x <= v) / len(win)
 
 
+def vol_ind(rows, F, val):
+    """30 天價平 IV（作 VRP 用）與最近到期偏斜（價外 3% Put IV − 價外 3% Call IV），與 scripts/backtest.py 相同定義"""
+    cs = enrich(rows, F, val)
+    by = {}
+    for c in cs:
+        by.setdefault(c[0], []).append(c)
+    out = {"iv30": None, "skew": None}
+    if not by:
+        return out
+    code = min(by, key=lambda k: abs(by[k][0][4] * 365 - 30))
+    near = sorted(by[code], key=lambda c: abs(c[2] - F))[:4]
+    v = [c[5] for c in near if c[5]]
+    out["iv30"] = round(sum(v) / len(v), 4) if v else None
+    nc = min(by, key=lambda k: by[k][0][4])
+    def ivk(target, call):
+        c = [x for x in by[nc] if x[3] == call and x[5]]
+        return min(c, key=lambda x: abs(x[2] - target))[5] if c else None
+    p_, c_ = ivk(F * 0.97, False), ivk(F * 1.03, True)
+    out["skew"] = round(p_ - c_, 4) if p_ and c_ else None
+    return out
+
+
 MA_LIST = (30, 60, 100)
+
+
+def vol_status(past):
+    """VRP＝30 天價平 IV − 近 20 日實現波動（年化）；偏斜的 60 日百分位"""
+    cur = past[-1] if past else {}
+    closes = [it.get("close") for it in past[-21:]]
+    rets = [(closes[i] / closes[i - 1] - 1) for i in range(1, len(closes)) if closes[i] and closes[i - 1]]
+    rv = math.sqrt(sum(x * x for x in rets) / len(rets)) * math.sqrt(252) if len(rets) >= 15 else None
+    iv = cur.get("iv30")
+    sk = [it.get("skew") for it in past[-60:] if it.get("skew") is not None]
+    pct = (sum(1 for x in sk if x <= cur["skew"]) / len(sk)) if cur.get("skew") is not None and len(sk) >= 40 else None
+    return {"iv30": iv, "rv20": round(rv, 4) if rv else None, "vrp": round(iv - rv, 4) if iv and rv else None,
+            "skew": cur.get("skew"), "skewPct": round(pct, 3) if pct is not None else None}
 
 
 def spot_ok(past):
@@ -428,6 +463,7 @@ def attach_signal(latest, seq):
         ret = round((past[-1]["close"] / past[-2]["close"] - 1) * 100, 2)
     return {"bucket": b, "label": BT_LABELS[b], "flip": s["flip"], "gex": s["gex"],
             "pct": round(pct, 3) if pct is not None else None, "expand": expand, "ret": ret,
+            "vol": vol_status(past),
             "ma": ma_status(ma_prices(past)), "maSrc": "加權指數" if spot_ok(past) else "台指期近月", "stats": table}
 
 
@@ -497,6 +533,10 @@ def main():
             items[d.isoformat()].update({"dealer_wc": w[0], "dealer_wp": w[1]})
         if all(x > 0 for x in (h, l, c)):
             items[d.isoformat()].update({"open": o, "high": h, "low": l, "close": c})
+        try:
+            items[d.isoformat()].update(vol_ind(rows, F, val))
+        except Exception as e:  # noqa: BLE001
+            print("波動指標失敗", d, e)
         latest = snap
         print(d, "F", F, "flip", summ["naive"]["flip"], "dealer", w, summ.get("dealer", {}).get("flip"), "rows", len(rows))
 
