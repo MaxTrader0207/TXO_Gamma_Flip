@@ -358,6 +358,33 @@ def gex_pct(values, v):
     return sum(1 for x in win if x <= v) / len(win)
 
 
+MA_LIST = (30, 60, 100)
+
+
+def ma_status(closes, N=10, slope=5):
+    """收盤相對 30／60／100 日均線的狀態；breaks＝今天「近期第一次跌破、且均線上揚」的均線（與 scripts/ma_bt.py 相同定義）"""
+    C = [c for c in closes if c]
+    if len(C) != len(closes) or len(C) < 2:
+        C = [c for c in closes if c]
+    out = {"vals": {}, "rising": {}, "above": {}, "breaks": []}
+
+    def sma(n, i):
+        return sum(C[i - n + 1:i + 1]) / n if i >= n - 1 else None
+    i = len(C) - 1
+    for n in MA_LIST:
+        m, m1, ms = sma(n, i), sma(n, i - 1), sma(n, i - slope)
+        if m is None:
+            continue
+        out["vals"][n] = round(m, 1)
+        out["above"][n] = C[i] >= m
+        if ms is not None:
+            out["rising"][n] = m > ms
+        if m1 is not None and ms is not None and i - N >= n - 1 and C[i] < m and C[i - 1] >= m1 and m > ms \
+                and all(C[k] >= sma(n, k) for k in range(i - N, i)):
+            out["breaks"].append(n)
+    return out
+
+
 def attach_signal(latest, seq):
     """latest：當日快照；seq：依日期排序的歷史 items（含當日）。回傳 btSignal 物件"""
     path = os.path.join(os.path.dirname(__file__), "..", "backtest", "signal.json")
@@ -377,7 +404,8 @@ def attach_signal(latest, seq):
     if len(past) >= 2 and past[-1].get("close") and past[-2].get("close"):
         ret = round((past[-1]["close"] / past[-2]["close"] - 1) * 100, 2)
     return {"bucket": b, "label": BT_LABELS[b], "flip": s["flip"], "gex": s["gex"],
-            "pct": round(pct, 3) if pct is not None else None, "expand": expand, "ret": ret, "stats": table}
+            "pct": round(pct, 3) if pct is not None else None, "expand": expand, "ret": ret,
+            "ma": ma_status([it.get("close") for it in past]), "stats": table}
 
 
 # ---------------- main ----------------

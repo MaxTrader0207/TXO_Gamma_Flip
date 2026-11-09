@@ -338,7 +338,7 @@ function btHtml(bt,F,atr,rows,val){
     :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
   return `<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
 <p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
-${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt,F,rows,val)}
+${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt,F,rows,val)}${btMaHtml(bt,F,rows,val)}
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
 }
 
@@ -386,6 +386,25 @@ function btBuyHtml(bt,F,rows,val){
   const none=`<span>回測條件不成立，<b>不做買方</b>。對照：其他日子買價平跨式 ${st(B.straddleOther.full)}；綠燈下跌日買 Call ${st(B.callGreenDown.full)}；買價外勒式 ${st(B.otm.full)}。</span>`;
   return `<div class="bt-sell bt-buy"><div><b>買方條件（回測）</b>：${why}。</div>${ideas.length?`<ul class="bt-tiers">${ideas.join("")}</ul>`:none}
 <span class="bt-src">買方只在紅燈時有優勢：紅燈且波動放大時實際波動常大於權利金隱含的波動，跨式賺錢；紅燈當天下跌後常有反彈，但這段期間台股大多頭，買 Call 的結果有多頭行情加持。價外勒式幾乎都賠，隔日就出場也比持有到結算差。</span></div>`;
+}
+
+/* 均線跌破（回測）：30／60／100MA 近期第一次跌破且均線上揚 → 買當週價外 1% Call；買 Put 回測虧損 */
+function btMaHtml(bt,F,rows,val){
+  const M=bt.stats&&bt.stats._ma,ma=bt.ma;if(!M||!ma||!ma.vals)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),p0=v=>Math.round(v*100)+"%";
+  const st=s=>s?`${s.n} 次、勝率 ${p0(s.win)}、平均 ${s.avg>=0?"+":""}${n0(s.avg)} 點${s.t!=null?`（t≈${f1(s.t)}）`:""}`:"—";
+  const state=Object.keys(ma.vals).map(n=>`${n}MA ${n0(ma.vals[n])}（${ma.above[n]?"站上":"跌破"}、${ma.rising[n]==null?"—":ma.rising[n]?"上揚":"下彎"}）`).join("、");
+  const red=bt.bucket==="red",sp=(M.split||[]).filter(x=>x.side==="Call"),sr=sp.find(x=>x.light==="紅燈"),sg=sp.find(x=>x.light==="綠燈");
+  let act="";
+  if(ma.breaks&&ma.breaks.length){
+    const live=(rows||[]).filter(x=>x.exp>val);
+    if(live.length){const e=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+e).code;
+      const c=live.filter(x=>x.code===code&&x.isCall&&isFinite(x.px)&&x.px>0&&x.K>=F*1.01).sort((a,b)=>a.K-b.K)[0];
+      act=`<li><b>今天近期第一次跌破 ${ma.breaks.map(n=>n+"MA").join("、")}，且均線上揚</b>：${c?`買 ${code}（${e.getMonth()+1}/${e.getDate()} 結算）${n0(c.K)} Call（${f1(c.px)}），持有到結算`:"找不到價外 1% 的報價"}。${red?"今天也是紅燈，回測勝率較高":"今天是綠燈，回測綠燈時這條規則不賺"}。</li>`;}
+  }
+  return `<div class="bt-sell bt-ma"><div><b>均線跌破（回測）</b>：${state}。</div>
+${act?`<ul class="bt-tiers">${act}</ul>`:`<span>今天沒有「近期第一次跌破、且均線上揚」的訊號。</span>`}
+<span class="bt-src">回測 ${M.from}～${M.to}（任一均線、跌破前連續 ${M.N} 日站上、均線高於 ${M.slope} 日前）：買當週價外 1% Call 持有到結算 ${st(M.call)}；同樣條件買 Put ${st(M.put)}；隔日就出場 ${st(M.callNext)}；對照每天都買價外 1% Call ${st(M.baseCall)}。依燈號分：紅燈 ${st(sr)}，綠燈 ${st(sg)}。樣本很少、期間又是大多頭，結果偏向「多頭回測均線買反彈」，請當參考。</span></div>`;
 }
 
 /* 模擬帳本：管線每天依回測規則記錄的賣方部位（到期後以最後結算價算損益） */

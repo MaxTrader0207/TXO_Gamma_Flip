@@ -258,8 +258,9 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>欄位會自動比對：契約、到期月份(週別)、契約到期日（若無則依代碼推算：<code>YYYYMM</code>＝第三個週三、<code>Wn</code>＝第 n 個週三、<code>Fn</code>＝第 n 個週五）、履約價、買賣權、結算價、未沖銷契約數。</li>
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
-        <li>賣方履約價的回測：每天收盤以結算價賣出最近到期的 OTM Call＋Put，持有到結算，每腳扣 1 點成本；履約價距離 = k × 預估波幅 × √持有交易日數，只做綠燈日。分兩級：標準 k=2.5（全期 336 筆平均每組 +5 點、最大回撤約 −290 點；但用前一年資料估模型、在後一年測試時 t 只有約 1、回撤近千點）；保守 k=3.0（全期與樣本外都穩定，最大回撤個位數，但平均權利金只有約 5 點，成本加到每腳 2 點時幾乎不賺）。k=1.5 或不乘 √天數會賠錢；紅燈日同規則累計虧損；持有期間轉紅燈出場、權利金 3 倍停損、加保護腳的價差，回測都更差。深價外的實際買賣價差可能大於 1 點，請以實際報價調整。完整結果在 backtest/strategy.md。</li>
-        <li>買方的回測：每天收盤以結算價買最近到期的選擇權，每腳每次進出扣 1 點成本。只有兩種情況有優勢，而且前後兩段資料都成立：(1) 紅燈且近 5 日 ATR 高於 5 個交易日前 → 買價平跨式持有到結算，63 筆勝率 56%、平均 +214 點；紅燈但波動沒放大、或綠燈時買跨式都不賺。(2) 紅燈且當天下跌 → 買價平 Call 持有到結算，83 筆平均 +207 點；綠燈下跌日買 Call 沒有顯著優勢。注意 (2) 的期間台股大多頭，同樣日子做多期貨平均也賺 336 點，空頭市場未必成立。買價外勒式、隔日出場、只看權利金便宜，回測都不賺。完整結果在 backtest/buyer.md。</li>
+        <li>賣方履約價的回測（2023/11～2026/11）：每天收盤以結算價賣出最近到期的 OTM Call＋Put，持有到結算，每腳扣 1 點成本；履約價距離 = k × 預估波幅 × √持有交易日數，只做綠燈日。標準 k=2.5：516 筆平均每組 +4.0 點、最大回撤約 −490 點；用前段資料估模型、在後段測試 t 約 1.6、回撤約 −1,100 點。保守 k=3.0：全期與樣本外都穩定，但平均權利金只有約 4 點，成本每腳 2 點時幾乎不賺。紅燈日同規則累計虧損；轉紅燈出場、3 倍停損、加保護腳的價差回測都更差。完整結果在 backtest/strategy.md。</li>
+        <li>均線跌破的回測（2023/11～2026/11）：台指期收盤近期第一次跌破 30／60／100 日均線（跌破前連續 10 日站上）、且均線仍高於 5 日前時，收盤買當週週選價外 1%。買 Call 持有到結算 21 次、勝率 48%、平均 +354 點（t≈2.4）；買 Put 20 次只贏 2 次、平均 −116 點；隔日就出場平均只有 +56 點。紅燈時跌破買 Call 15 次 9 勝、平均 +531 點，綠燈 6 次只贏 1 次。但獲利集中在 2026 年的大多頭（8 次合計 +6,298 點），2024、2025 年每次平均只有 +98、+53 點。完整結果在 backtest/ma.md。</li>
+        <li>買方的回測（2023/11～2026/11）：每天收盤以結算價買最近到期的選擇權，每腳每次進出扣 1 點成本。只有兩種情況有優勢：(1) 紅燈且近 5 日 ATR 高於 5 個交易日前 → 買價平跨式持有到結算，86 筆勝率 52%、平均 +155 點（後半段較強）；紅燈但波動沒放大、或綠燈時買跨式都不賺。(2) 紅燈且當天下跌 → 買價平 Call 持有到結算，112 筆平均 +184 點，前後兩段都成立；綠燈下跌日買 Call 沒有顯著優勢。(2) 的期間台股大多頭，空頭市場未必成立。買價外勒式、隔日出場、只看權利金便宜，回測都不賺。完整結果在 backtest/buyer.md。</li>
         <li>牆與磁吸的回測（483 日）：隔日收盤落在 Put Wall～Call Wall 之間的比例 57%，和「以現價為中心、同樣寬度的區間」60% 差不多；觸及 Call Wall 後當天收回的只有 33%、Put Wall 31%。最後結算價（由到期日價內選擇權結算價反推）比前一日收盤更靠近「±3% 內最大未平倉」的比例 41%，和隨機價位的 41% 一樣；最大痛點只有 31%。所以牆與最大未平倉只當作「避險量集中的價位」參考，不當成支撐、壓力或磁吸；停損與價差寬度以 ATR 與燈號的預估波幅為準。</li>
         <li>回測燈號：依當日收盤是否在「Call 多、Put 空」合併 Flip 之下分紅／綠兩級（找不到 Flip 時看總 GEX 正負）。回測發現 Flip 之上不論距離遠近、GEX 百分位高低，隔日波動差異都不大，所以不另設黃燈。預估明日波幅來自回測的迴歸：隔日真實波幅% ＝ 基準 ＋ 係數 × 近 5 日 ATR% ＋ 紅燈加成，每次重跑回測會自動更新係數。</li>
         <li>方向假設預設採「Call 多、Put 空」。2024/11～2026/11 共 483 個交易日的回測：期貨收在此假設的 Flip 之下時，隔日真實波幅平均 2.43%、漲跌 ≥1.5% 的機率 37%；在 Flip 之上時為 1.78%、24%。扣除「近 5 日 ATR」本身的波動延續效果後，Flip 之下仍多出約 0.7 個百分點（t≈3.4），是統計上站得住的訊號。「自營商實際淨部位」以期交所三大法人的自營商 Call、Put 淨未平倉比例當方向權重，但它約 8 成的日子算不出 Flip，扣除 ATR 效果後也沒有額外預測力，所以保留作參考對照。完整回測在 repo 的 backtest/ 資料夾。</li>
@@ -430,7 +431,7 @@ function btHtml(bt,F,atr,rows,val){
     :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
   return `<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
 <p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
-${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt,F,rows,val)}
+${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt,F,rows,val)}${btMaHtml(bt,F,rows,val)}
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
 }
 
@@ -478,6 +479,25 @@ function btBuyHtml(bt,F,rows,val){
   const none=`<span>回測條件不成立，<b>不做買方</b>。對照：其他日子買價平跨式 ${st(B.straddleOther.full)}；綠燈下跌日買 Call ${st(B.callGreenDown.full)}；買價外勒式 ${st(B.otm.full)}。</span>`;
   return `<div class="bt-sell bt-buy"><div><b>買方條件（回測）</b>：${why}。</div>${ideas.length?`<ul class="bt-tiers">${ideas.join("")}</ul>`:none}
 <span class="bt-src">買方只在紅燈時有優勢：紅燈且波動放大時實際波動常大於權利金隱含的波動，跨式賺錢；紅燈當天下跌後常有反彈，但這段期間台股大多頭，買 Call 的結果有多頭行情加持。價外勒式幾乎都賠，隔日就出場也比持有到結算差。</span></div>`;
+}
+
+/* 均線跌破（回測）：30／60／100MA 近期第一次跌破且均線上揚 → 買當週價外 1% Call；買 Put 回測虧損 */
+function btMaHtml(bt,F,rows,val){
+  const M=bt.stats&&bt.stats._ma,ma=bt.ma;if(!M||!ma||!ma.vals)return "";
+  const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),p0=v=>Math.round(v*100)+"%";
+  const st=s=>s?`${s.n} 次、勝率 ${p0(s.win)}、平均 ${s.avg>=0?"+":""}${n0(s.avg)} 點${s.t!=null?`（t≈${f1(s.t)}）`:""}`:"—";
+  const state=Object.keys(ma.vals).map(n=>`${n}MA ${n0(ma.vals[n])}（${ma.above[n]?"站上":"跌破"}、${ma.rising[n]==null?"—":ma.rising[n]?"上揚":"下彎"}）`).join("、");
+  const red=bt.bucket==="red",sp=(M.split||[]).filter(x=>x.side==="Call"),sr=sp.find(x=>x.light==="紅燈"),sg=sp.find(x=>x.light==="綠燈");
+  let act="";
+  if(ma.breaks&&ma.breaks.length){
+    const live=(rows||[]).filter(x=>x.exp>val);
+    if(live.length){const e=live.reduce((a,x)=>x.exp<a?x.exp:a,live[0].exp),code=live.find(x=>+x.exp===+e).code;
+      const c=live.filter(x=>x.code===code&&x.isCall&&isFinite(x.px)&&x.px>0&&x.K>=F*1.01).sort((a,b)=>a.K-b.K)[0];
+      act=`<li><b>今天近期第一次跌破 ${ma.breaks.map(n=>n+"MA").join("、")}，且均線上揚</b>：${c?`買 ${code}（${e.getMonth()+1}/${e.getDate()} 結算）${n0(c.K)} Call（${f1(c.px)}），持有到結算`:"找不到價外 1% 的報價"}。${red?"今天也是紅燈，回測勝率較高":"今天是綠燈，回測綠燈時這條規則不賺"}。</li>`;}
+  }
+  return `<div class="bt-sell bt-ma"><div><b>均線跌破（回測）</b>：${state}。</div>
+${act?`<ul class="bt-tiers">${act}</ul>`:`<span>今天沒有「近期第一次跌破、且均線上揚」的訊號。</span>`}
+<span class="bt-src">回測 ${M.from}～${M.to}（任一均線、跌破前連續 ${M.N} 日站上、均線高於 ${M.slope} 日前）：買當週價外 1% Call 持有到結算 ${st(M.call)}；同樣條件買 Put ${st(M.put)}；隔日就出場 ${st(M.callNext)}；對照每天都買價外 1% Call ${st(M.baseCall)}。依燈號分：紅燈 ${st(sr)}，綠燈 ${st(sg)}。樣本很少、期間又是大多頭，結果偏向「多頭回測均線買反彈」，請當參考。</span></div>`;
 }
 
 /* 模擬帳本：管線每天依回測規則記錄的賣方部位（到期後以最後結算價算損益） */

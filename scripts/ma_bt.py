@@ -165,6 +165,14 @@ def main():
     json.dump({"results": res, "split": split, "events": detail}, open(os.path.join(OUT, "ma.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
     print("\n".join(L))
+    # 儀表板用摘要：任一均線、N=10、持有到結算
+    pick = lambda side, exit_: next((x for x in res if x["ma"] == "任一" and x["N"] == 10 and x["side"] == side and x["exit"] == exit_), None)  # noqa: E731
+    sp = os.path.join(OUT, "signal.json")
+    sig = json.load(open(sp, encoding="utf-8"))
+    sig["_ma"] = {"from": rows[0]["date"], "to": rows[-1]["date"], "N": 10, "slope": 5, "otm": 0.01, "cost": COST,
+                  "call": pick("Call", "hold"), "put": pick("Put", "hold"), "callNext": pick("Call", "next"),
+                  "baseCall": base[("Call", "hold")], "split": split}
+    json.dump(sig, open(sp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
 
 if __name__ == "__main__":

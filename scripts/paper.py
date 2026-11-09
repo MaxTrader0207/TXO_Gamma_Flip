@@ -108,11 +108,21 @@ def update(days, opt, fut, items, tg, model, tiers):
                 led["entries"].append({**base, "tier": "買方跨式", "Kc": K, "pc": pc, "Kp": K, "pp": pp, "debit": round(pc + pp, 1)})
             if down and (ds, "買方Call") not in have:
                 led["entries"].append({**base, "tier": "買方Call", "Kc": K, "pc": pc, "debit": round(pc, 1)})
-        have |= {(ds, t["name"]) for t in tiers} | {(ds, "買方跨式"), (ds, "買方Call")}
+        # 均線跌破（30／60／100MA 近期第一次跌破、均線上揚）→ 買當週價外 1% Call
+        if (ds, "均線Call") not in have:
+            ms = tg.ma_status([x.get("close") for x in seq])
+            if ms["breaks"]:
+                calls = sorted((r[2], r[4]) for r in live if r[0] == code and r[3] == "C" and r[2] >= F * 1.01)
+                if calls:
+                    K, pc = calls[0]
+                    led["entries"].append({"date": ds, "code": code, "exp": exp, "n": n, "F": F, "light": "red" if red else "green",
+                                           "side": "buy", "status": "open", "tier": "均線Call", "Kc": K, "pc": pc,
+                                           "debit": round(pc, 1), "ma": ms["breaks"]})
+        have |= {(ds, t["name"]) for t in tiers} | {(ds, "買方跨式"), (ds, "買方Call"), (ds, "均線Call")}
     led["entries"].sort(key=lambda e: (e["date"], e["tier"]))
     led["start"] = led["entries"][0]["date"] if led["entries"] else None
     json.dump(led, open(PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
-    return summary(led, tiers + [{"name": "買方跨式", "k": None}, {"name": "買方Call", "k": None}])
+    return summary(led, tiers + [{"name": "買方跨式", "k": None}, {"name": "買方Call", "k": None}, {"name": "均線Call", "k": None}])
 
 
 def summary(led, tiers):
