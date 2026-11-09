@@ -968,15 +968,12 @@
 "F": 46648.0,
 "light": "green",
 "dist": 3944,
-"status": "closed",
+"status": "open",
 "Kc": 50600.0,
 "pc": 1.7,
 "Kp": 42700.0,
 "pp": 3.8,
-"credit": 5.5,
-"S": 47244.0,
-"approx": true,
-"pnl": 3.5
+"credit": 5.5
 },
 {
 "date": "2026-10-21",
@@ -988,15 +985,12 @@
 "F": 46648.0,
 "light": "green",
 "dist": 3286,
-"status": "closed",
+"status": "open",
 "Kc": 49950.0,
 "pc": 3.1,
 "Kp": 43300.0,
 "pp": 5.4,
-"credit": 8.5,
-"S": 47244.0,
-"approx": true,
-"pnl": 6.5
+"credit": 8.5
 },
 {
 "date": "2026-10-22",
@@ -1008,15 +1002,12 @@
 "F": 46234.0,
 "light": "green",
 "dist": 2461,
-"status": "closed",
+"status": "open",
 "Kc": 48700.0,
 "pc": 2.2,
 "Kp": 43700.0,
 "pp": 18.0,
-"credit": 20.2,
-"S": 47244.0,
-"approx": true,
-"pnl": 18.2
+"credit": 20.2
 },
 {
 "date": "2026-10-22",
@@ -1028,15 +1019,12 @@
 "F": 46234.0,
 "light": "green",
 "dist": 2051,
-"status": "closed",
+"status": "open",
 "Kc": 48300.0,
 "pc": 4.7,
 "Kp": 44100.0,
 "pp": 33.0,
-"credit": 37.7,
-"S": 47244.0,
-"approx": true,
-"pnl": 35.7
+"credit": 37.7
 },
 {
 "date": "2026-10-27",

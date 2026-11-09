@@ -42,7 +42,7 @@ def update(days, opt, fut, items, tg, model, tiers):
         # 1) 結算今天到期的部位
         for e in led["entries"]:
             # 到期日遇休市（颱風假等）會順延，所以以「今天的資料裡這個契約到期」為準
-            if e.get("status") == "open" and e["exp"] <= ds and any(r[0] == e["code"] and r[1] == ds for r in allr):
+            if e.get("status") == "open" and e["exp"] <= ds and any(r[0] == e["code"] and r[1] <= ds for r in allr):
                 S = final_settle(allr, e["code"], F)
                 if S is None:
                     print("模擬帳本：", ds, e["code"], "到期但無法反推結算價", flush=True)
