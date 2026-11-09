@@ -163,7 +163,7 @@ def group_of(code):
 
 
 # ---------------- parse ----------------
-def parse_options(txt):
+def parse_options(txt, keep_zero_oi=False):
     head, rows = read_csv(txt)
     if not head:
         return {}
@@ -182,8 +182,9 @@ def parse_options(txt):
         if not re.match(r"^\d{6}([WF]\d)?$", code):
             continue
         k, oi = num(r[c["k"]]), num(r[c["oi"]])
-        if not (k > 0) or not (oi > 0):
+        if not (k > 0) or (not (oi > 0) and not keep_zero_oi):
             continue
+        oi = oi if oi > 0 else 0
         px = num(r[c["settle"]])
         if not (px > 0) and c["close"] >= 0:
             px = num(r[c["close"]])

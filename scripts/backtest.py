@@ -63,7 +63,7 @@ def compute(days_back):
     start = today - timedelta(days=days_back)
     opt, fut, inst = {}, {}, {}
     for txt in tg.download_range(tg.OPT_URL, "TXO", start, today):
-        opt.update(tg.parse_options(txt))
+        opt.update(tg.parse_options(txt, keep_zero_oi=True))
     print("選擇權天數", len(opt), flush=True)
     for txt in tg.download_range(tg.FUT_URL, "TX", start, today):
         fut.update(tg.parse_futures(txt))
@@ -76,7 +76,8 @@ def compute(days_back):
         fcode, F = fut[d][:2]
         o, h, l, c = fut[d][2:]
         val = datetime(d.year, d.month, d.day, 13, 45, tzinfo=tg.TPE)
-        live = [r for r in opt[d] if date.fromisoformat(r[1]) > d]
+        allr = opt[d]
+        live = [r for r in allr if date.fromisoformat(r[1]) > d and r[5] > 0]
         oi_tot, exps = {}, {}
         for r in live:
             exps[r[0]] = r[1]
@@ -102,6 +103,25 @@ def compute(days_back):
         rec["near_gex"] = round(tg.gex(sub, F, "naive"), 3) if sub else None
         rec.update(levels(cs, rows, F))
         rec["near_exp"] = exps.get(near)
+        # 最近到期的完整報價（含 OI 為 0 的履約價），供賣方策略回測；以結算價當成交價
+        ch = {}
+        for r in allr:
+            if r[0] == near and r[4] and abs(r[2] - F) / F <= 0.12:
+                ch.setdefault(r[2], [None, None])[0 if r[3] == "C" else 1] = r[4]
+        rec["chain"] = [[k, v[0], v[1]] for k, v in sorted(ch.items())]
+        # 今天到期的契約：由價內選擇權結算價反推最後結算價（Call：K+C；Put：K−P）
+        fin = {}
+        for code in {r[0] for r in allr if r[1] == d.isoformat()}:
+            est = [r[2] + r[4] if r[3] == "C" else r[2] - r[4] for r in allr
+                   if r[0] == code and r[4] and r[4] > 5 and ((r[3] == "C" and r[2] < F) or (r[3] == "P" and r[2] > F))]
+            if est:
+                est.sort()
+                med = est[len(est) // 2]
+                spread = est[-1] - est[0]
+                fin[code] = {"S": round(med, 2), "spread": round(spread, 2), "n": len(est)}
+        if fin:
+            rec["final"] = fin
+            print("  最後結算價推估", d, fin, "TX 收盤", c, flush=True)
         rows_out.append(rec)
         print(d, F, rec["naive_gex"], rec["naive_flip"], rec.get("dealer_gex"), flush=True)
     return rows_out
