@@ -59,6 +59,8 @@ def main():
         night.update(tg.parse_futures(txt, "盤後"))
     print("日盤", len(day), "夜盤", len(night))
     nm, nextattr = night_map(day, night)
+    json.dump({d.isoformat(): [v[2], v[3], v[4], v[5]] for d, v in sorted(nm.items())},
+              open(os.path.join(OUT, "night_daily.json"), "w", encoding="utf-8"), indent=0)
     recs = []
     for i, r in enumerate(rows[:-1]):
         d = date.fromisoformat(r["date"])

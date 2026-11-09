@@ -30,6 +30,8 @@ def set_fill(mode):
 def price(row, call, side):
     """row：[K, C結算, P結算, C買, C賣, P買, P賣]；side：sell／buy／settle"""
     settle = row[1] if call else row[2]
+    if side == "open":
+        return (row[7] if call else row[8]) if len(row) > 8 else None
     if FILL != "quote" or side == "settle" or len(row) < 7:
         return settle
     bid, ask = (row[3], row[4]) if call else (row[5], row[6])

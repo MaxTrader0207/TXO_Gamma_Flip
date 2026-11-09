@@ -179,7 +179,7 @@ def parse_options(txt, keep_zero_oi=False):
         d=col(head, "交易日期"), prod=col(head, "契約", "商品代號", exact=True), mon=col(head, "到期月份"),
         exp=col(head, "契約到期日"), k=col(head, "履約價"), cp=col(head, "買賣權"),
         settle=col(head, "結算價"), close=col(head, "收盤價"), oi=col(head, "未沖銷"), sess=col(head, "交易時段"),
-        bid=col(head, "最後最佳買價"), ask=col(head, "最後最佳賣價"),
+        bid=col(head, "最後最佳買價"), ask=col(head, "最後最佳賣價"), opn=col(head, "開盤價"),
     )
     out = {}
     for r in rows:
@@ -205,7 +205,7 @@ def parse_options(txt, keep_zero_oi=False):
         out.setdefault(td, []).append(
             [code, exp.isoformat(), k, "C" if ("買" in r[c["cp"]] or "call" in r[c["cp"]].lower()) else "P",
              round(px, 2) if px > 0 else None, int(oi),
-             q(r, c["bid"]), q(r, c["ask"])]
+             q(r, c["bid"]), q(r, c["ask"]), q(r, c["opn"])]
         )
     return out
 
@@ -486,7 +486,7 @@ def main():
         summ = summarize(rows, F, val, w)
         inst_out = {who: v for who, v in (inst.get(d) or {}).items()}
         snap = {"tradeDate": d.isoformat(), "valuation": val.isoformat(), "F": F, "futContract": fcode,
-                "fields": ["code", "expiry", "strike", "cp", "settle", "oi", "bid", "ask"], "rows": rows, "summary": summ,
+                "fields": ["code", "expiry", "strike", "cp", "settle", "oi", "bid", "ask", "open"], "rows": rows, "summary": summ,
                 "oiTotals": oi_tot, "institutional": inst_out,
                 "dealerWeights": list(w) if w else None,
                 "generatedAt": datetime.now(TPE).isoformat(timespec="seconds")}

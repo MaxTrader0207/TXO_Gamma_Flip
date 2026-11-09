@@ -104,16 +104,34 @@ def compute(days_back):
         rec.update(levels(cs, rows, F))
         rec["near_exp"] = exps.get(near)
         # 最近到期的完整報價（含 OI 為 0 的履約價），供賣方策略回測；以結算價當成交價
-        # 每檔：[履約價, Call 結算價, Put 結算價, Call 買價, Call 賣價, Put 買價, Put 賣價]
+        # 每檔：[履約價, Call 結算價, Put 結算價, Call 買價, Call 賣價, Put 買價, Put 賣價, Call 開盤價, Put 開盤價]
         ch = {}
         for r in allr:
             if r[0] == near and r[4] and abs(r[2] - F) / F <= 0.12:
-                v = ch.setdefault(r[2], [None] * 6)
+                v = ch.setdefault(r[2], [None] * 8)
+                o = r[8] if len(r) > 8 else None
                 if r[3] == "C":
-                    v[0], v[2], v[3] = r[4], r[6], r[7]
+                    v[0], v[2], v[3], v[6] = r[4], r[6], r[7], o
                 else:
-                    v[1], v[4], v[5] = r[4], r[6], r[7]
+                    v[1], v[4], v[5], v[7] = r[4], r[6], r[7], o
         rec["chain"] = [[k] + v for k, v in sorted(ch.items())]
+        # 最近到期的偏斜：價外 3% Put 的 IV − 價外 3% Call 的 IV；以及最近到期價平 IV
+        try:
+            ex = datetime.fromisoformat(exps[near] + "T13:30:00+08:00")
+            Tn = max((ex - val).total_seconds() / 86400 / 365, 0.5 / 365)
+            def ivk(target, call):
+                c = [(k, v) for k, v in ch.items() if (v[0] if call else v[1])]
+                if not c:
+                    return None
+                k, v = min(c, key=lambda x: abs(x[0] - target))
+                return tg.implied_vol(v[0] if call else v[1], F, k, Tn, call)
+            ivp, ivc = ivk(F * 0.97, False), ivk(F * 1.03, True)
+            atm = [ivk(F, True), ivk(F, False)]
+            atm = [x for x in atm if x]
+            rec["skew"] = round(ivp - ivc, 4) if ivp and ivc else None
+            rec["ivNear"] = round(sum(atm) / len(atm), 4) if atm else None
+        except Exception:  # noqa: BLE001
+            rec["skew"] = rec["ivNear"] = None
         # 今天到期的契約：由價內選擇權結算價反推最後結算價（Call：K+C；Put：K−P）
         fin = {}
         for code in {r[0] for r in allr if r[1] == d.isoformat()}:

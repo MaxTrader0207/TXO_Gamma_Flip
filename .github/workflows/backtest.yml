@@ -33,6 +33,7 @@ jobs:
           python scripts/ma_bt.py
           python scripts/scoreboard.py
           python scripts/night_bt.py
+          python scripts/rules2_bt.py
       - name: 提交結果
         run: |
           git config user.name "txo-bot"
