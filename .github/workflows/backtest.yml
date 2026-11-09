@@ -26,12 +26,14 @@ jobs:
           python-version: "3.12"
       - run: pip install requests
       - name: 回測
-        run: python scripts/backtest.py --days "${{ github.event.inputs.days || '730' }}"
+        run: |
+          python scripts/backtest.py --days "${{ github.event.inputs.days || '730' }}"
+          python scripts/strategy_bt.py
       - name: 提交結果
         run: |
           git config user.name "txo-bot"
           git config user.email "txo-bot@users.noreply.github.com"
-          git pull --rebase -q || true
           git add backtest
           git commit -m "backtest: $(TZ=Asia/Taipei date +%F)" || exit 0
-          git push
+          for i in 1 2 3; do git pull --rebase -q && git push && exit 0; sleep 5; done
+          exit 1
