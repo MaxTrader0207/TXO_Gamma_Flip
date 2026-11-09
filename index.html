@@ -137,6 +137,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
       <label for="valDate">評價時點<input id="valDate" type="datetime-local"></label>
       <label for="signMode">造市商方向假設
         <select id="signMode">
+          <option value="dealer" selected>自營商實際淨部位（期交所三大法人）</option>
           <option value="naive">Call 多、Put 空（SqueezeMetrics）</option>
           <option value="short">全部空方（散戶淨買）</option>
         </select>
@@ -165,6 +166,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <dt>每 100 點避險量</dt><dd id="kHedge">—</dd>
         <dt>近 5 日 ATR</dt><dd id="kAtr">—</dd>
         <dt>Call Wall / Put Wall</dt><dd id="kWalls">—</dd>
+        <dt>自營商淨部位</dt><dd id="kDealer">—</dd>
       </dl>
       <p id="readout" class="read"></p>
     </div>
@@ -233,6 +235,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>欄位會自動比對：契約、到期月份(週別)、契約到期日（若無則依代碼推算：<code>YYYYMM</code>＝第三個週三、<code>Wn</code>＝第 n 個週三、<code>Fn</code>＝第 n 個週五）、履約價、買賣權、結算價、未沖銷契約數。</li>
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
+        <li>方向假設預設採「自營商實際淨部位」：期交所每日公布三大法人選擇權買賣權分計，以自營商 Call、Put 的淨未平倉除以全市場未平倉，當作每口的方向權重（例如 +15% 代表自營商整體淨買進 15% 的 Call）。各履約價按比例分配，是近似值；另外兩種假設保留供對照。</li>
         <li>Flip：固定 OI 與各履約價 IV，在 ±掃描範圍內 400 個價位重新計算 Γ，取總 GEX 穿越 0 且最接近現價的位置（線性內插）。</li>
         <li>結算日當天剩餘時間極短，價平 Gamma 會劇烈放大，Flip 可能在履約價之間跳動，請與其他到期一起判讀。</li>
       </ol>
@@ -361,7 +364,9 @@ function prepare(){
   }
   return byExp;
 }
-function signOf(row){return $("signMode").value==="short"?-1:(row.isCall?1:-1);}
+function signOf(row){const m=$("signMode").value;
+  if(m==="dealer"){if(state.dw)return row.isCall?state.dw[0]:state.dw[1];return row.isCall?1:-1;}
+  return m==="short"?-1:(row.isCall?1:-1);}
 function gexAt(rows,S,r){let g=0;for(const x of rows){const G=gamma76(S,x.K,x.T,x.ivUse,r);g+=signOf(x)*G*x.oi*MULT*S*S*0.01;}return g/1e8;}
 function hedgeAt(rows,S,r){let h=0;for(const x of rows){h+=signOf(x)*gamma76(S,x.K,x.T,x.ivUse,r)*x.oi*100*MULT/TX_MULT;}return h;}
 function findFlip(grid,vals,S){
@@ -398,6 +403,9 @@ const flipMarker={id:"flipMarker",afterDatasetsDraw(ch,args,opts){
 
 function render(){
   if(!state.rows.length)return;
+  const dtxt=dealerText();$("kDealer").textContent=dtxt||"—";
+  if($("signMode").value==="dealer"&&!state.dw)$("msg").textContent="這份資料沒有三大法人部位，「自營商實際淨部位」暫以「Call 多、Put 空」計算。";
+  else if($("msg").textContent.startsWith("這份資料沒有三大法人"))$("msg").textContent="";
   const r=(+$("rate").value||0)/100,S=state.spot,pct=Math.min(20,Math.max(2,+$("scanPct").value||8))/100;
   const byExp=prepare();
   const codes=Object.keys(byExp).sort((a,b)=>byExp[a][0].exp-byExp[b][0].exp);
@@ -595,6 +603,12 @@ document.addEventListener("click",e=>{
   saveFile(`TXO_GammaFlip_${tag}_${day||"data"}.${type}`,text);
 });
 
+function dealerText(){
+  const d=state.inst&&state.inst["自營商"],w=state.dw;
+  if(!d||!w)return "";
+  const f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
+  return `Call 淨 ${f(d.C?.net)} 口（${pc(w[0])}）／Put 淨 ${f(d.P?.net)} 口（${pc(w[1])}）`;
+}
 /* 到期的完整未平倉：每日資料有 oiTotals 時用它（含 ±15% 以外的履約價），否則用已載入的履約價加總 */
 function oiTot(code,rows){const t=state.oiTotals&&state.oiTotals[code];
   if(t)return [+t[0]||0,+t[1]||0];
@@ -659,13 +673,13 @@ function groupAdvice(g,{gg,w,expInfo},{S,r,grid,incRows,byExp,gAll,fAll,wAll,sd,
     const stop=fAll!=null?r10(fAll-0.5*A):r10(lo-0.5*A);
     const mid=r10((lo+hi)/2);
     const tL=expiring&&next.pin&&next.pin>lo+0.25*sd?next.pin:mid,tS=expiring&&next.pin&&next.pin<hi-0.25*sd?next.pin:mid;
-    plan.push(`期貨低接：回落 ${fmt(lo,0)} 附近分批偏多，停損收盤跌破 ${fmt(stop,0)}（Flip 下方），目標 ${P(tL)}。`);
+    plan.push(`期貨低接：回落 ${fmt(lo,0)} 附近分批偏多，停損收盤跌破 ${fmt(stop,0)}（${fAll!=null?"Flip 下方":"區間下緣再往下半個 ATR"}），目標 ${P(tL)}。`);
     plan.push(`期貨高出：上攻 ${fmt(hi,0)} 附近不追價、多單減碼或短空，停損站穩 ${fmt(r10(hi+0.5*A),0)}，目標 ${P(tS)}。`);
     const sp=strikeNear(exRows,Math.min(fAll??S,S-sT),false,-1),sc=strikeNear(exRows,Math.max(callW||0,S+sT),true,1);
     const spw=sp&&strikeNear(exRows,sp-W2,false,-1),scw=sc&&strikeNear(exRows,sc+W2,true,1);
     if(sp&&sc&&spw&&scw){const cr=px(exRows,sp,false)-px(exRows,spw,false)+px(exRows,sc,true)-px(exRows,scw,true);
       plan.push(`選擇權（${next.code}）：鐵兀鷹 賣 ${fmt(sp)}P／買 ${fmt(spw)}P＋賣 ${fmt(sc)}C／買 ${fmt(scw)}C，以結算價估收約 ${fmt(cr,1)} 點，單邊最大風險約 ${fmt(Math.max(sp-spw,scw-sc)-cr,1)} 點；Put 履約價放在 Flip 之下，跌破 Flip 即出場。`);}
-    plan.push(`失效條件：收盤跌破合併 Flip ${P(fAll)}，區間策略全部停止，改用負 Gamma 的順勢做法。`);
+    plan.push(fAll!=null?`失效條件：收盤跌破合併 Flip ${P(fAll)}，區間策略全部停止，改用負 Gamma 的順勢做法。`:`失效條件：掃描範圍內沒有 Flip，整段都是正 Gamma；收盤跌破 Put Wall ${P(putW)} 或隔日總 GEX 轉負，區間策略停止。`);
   }else if(regime==="neg"){
     const fl0=fAll!=null?fAll:(callW||S+sd);
     const sellZone=r10(Math.min(fl0-0.5*A,S+A));
@@ -702,7 +716,9 @@ function renderHistory(){
   const labels=items.map(it=>it.date.slice(5).replace("-","/"));
   const pick=k=>items.map(it=>it[`${mode}_${k}`]??null);
   const flipAll=pick("flip");
-  const regime=items.map((it,i)=>flipAll[i]===null?null:it.F>=flipAll[i]);
+  const gexs=pick("gex");
+  // 有 Flip：看價格在 Flip 哪一側；沒有 Flip：整段同號，看總 GEX 正負
+  const regime=items.map((it,i)=>flipAll[i]!==null?it.F>=flipAll[i]:gexs[i]==null?null:gexs[i]>=0);
   const ds=[
     {label:"台指期結算價",data:items.map(it=>it.F),borderColor:css("--accent"),borderWidth:2.2,pointRadius:items.length>40?1.5:3,
       pointBackgroundColor:regime.map(r=>r===null?css("--muted"):r?css("--pos"):css("--neg")),pointBorderWidth:0},
@@ -719,7 +735,7 @@ function renderHistory(){
               y:{ticks:{color:css("--muted"),callback:v=>fmt(v,0)},grid:{color:css("--line")}}}}});
   const last=items.at(-1),lf=last[`${mode}_flip`];
   const posDays=regime.filter(r=>r===true).length,tot=regime.filter(r=>r!==null).length;
-  note.textContent=`近 ${tot} 個交易日中，${posDays} 天收在合併 Flip 之上（正 Gamma）。最新 ${last.date}：結算價 ${fmt(last.F,0)}，Flip ${lf==null?"區間內無":fmt(lf,0)}。點的顏色：綠＝正 Gamma 日，紅＝負 Gamma 日。`;
+  note.textContent=`近 ${tot} 個交易日中，${posDays} 天為正 Gamma（收在合併 Flip 之上，或整段都是正 Gamma），${tot-posDays} 天為負 Gamma。最新 ${last.date}：結算價 ${fmt(last.F,0)}，Flip ${lf==null?"區間內無":fmt(lf,0)}。點的顏色：綠＝正 Gamma 日，紅＝負 Gamma 日。`;
 }
 
 /* ---------- wiring ---------- */
@@ -766,7 +782,7 @@ function applySnapshot(snap,origin){
     return {code,grp:groupOf(code),exp:new Date(y,m-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
   const val=new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00");
   const keep=state.source==="auto"&&state.tradeDate===snap.tradeDate?state.included:{};
-  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,oiTotals:snap.oiTotals||null};
+  state={rows,spot:+snap.F,val,source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,oiTotals:snap.oiTotals||null,dw:snap.dealerWeights||null,inst:snap.institutional||null};
   mode="auto";$("spot").value=Math.round(+snap.F);$("valDate").value=toLocalInput(val);
   const b=$("srcBadge");b.className="src";
   b.textContent=`每日自動更新｜資料日 ${snap.tradeDate.replace(/-/g,"/")}｜台指期 ${snap.futContract||""} ${fmt(+snap.F,0)}${origin?"｜"+origin:""}`;

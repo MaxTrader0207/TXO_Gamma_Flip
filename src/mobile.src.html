@@ -141,6 +141,7 @@ body.nodl .dl{display:none}
       <div class="stat"><div class="k">近 5 日 ATR</div><div id="hAtr" class="v">—</div></div>
     </div>
     <p id="hRead" class="read"></p>
+    <p id="hDealer" class="note"></p>
   </section>
 
   <section id="ladderCard" class="card" hidden>
@@ -184,6 +185,7 @@ body.nodl .dl{display:none}
     <h2>設定</h2>
     <label class="set" for="signMode">造市商方向假設
       <select id="signMode">
+        <option value="dealer" selected>自營商實際淨部位（期交所三大法人）</option>
         <option value="naive">Call 多、Put 空（SqueezeMetrics）</option>
         <option value="short">全部空方（散戶淨買）</option>
       </select>
@@ -251,6 +253,8 @@ let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
   if(!state.rows.length)return;
+  {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
+   $("hDealer").textContent=d&&w?`自營商淨部位：Call ${f(d.C?.net)} 口（${pc(w[0])}）／Put ${f(d.P?.net)} 口（${pc(w[1])}）${$("signMode").value==="dealer"?"，已用來校正方向":""}`:"";}
   const m=compute();last=m;
   const {S,fl,gNow,hNow,W,sdRef,atr,atrReal,blocks}=m;
   $("emptyState").hidden=true;
@@ -337,13 +341,14 @@ function renderHistory(){
   if(histChart)histChart.destroy();
   histChart=new Chart($("histChart"),{type:"line",data:{labels:items.map(it=>it.date.slice(5).replace("-","/")),datasets:[
     {label:"台指期",data:items.map(it=>it.F),borderColor:css("--accent"),borderWidth:2.2,pointRadius:2.5,pointBorderWidth:0,
-      pointBackgroundColor:items.map((it,i)=>flips[i]==null?css("--muted"):it.F>=flips[i]?css("--pos"):css("--neg"))},
+      pointBackgroundColor:items.map((it,i)=>{const g=it[`${mode}_gex`];const pos=flips[i]!=null?it.F>=flips[i]:g==null?null:g>=0;return pos==null?css("--muted"):pos?css("--pos"):css("--neg");})},
     {label:"合併 Flip",data:flips,borderColor:css("--flip"),borderWidth:2,borderDash:[5,4],pointRadius:0,spanGaps:true}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:it=>`${it.dataset.label}：${fmt(it.parsed.y,0)}`}}},
       scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:5,maxRotation:0},grid:{display:false}},y:{ticks:{color:css("--muted"),maxTicksLimit:6,callback:v=>fmt(v,0)},grid:{color:css("--line")}}}}});
-  const pos=items.filter((it,i)=>flips[i]!=null&&it.F>=flips[i]).length,tot=flips.filter(v=>v!=null).length;
-  $("histNote").textContent=`藍線為台指期、紫色虛線為合併 Flip。近 ${tot} 日有 ${pos} 天收在 Flip 之上（綠點），其餘為負 Gamma 日（紅點）。`;
+  const reg=items.map((it,i)=>{const g=it[`${mode}_gex`];return flips[i]!=null?it.F>=flips[i]:g==null?null:g>=0;});
+  const pos=reg.filter(v=>v===true).length,tot=reg.filter(v=>v!=null).length;
+  $("histNote").textContent=`藍線為台指期、紫色虛線為合併 Flip。近 ${tot} 日有 ${pos} 天為正 Gamma（綠點），${tot-pos} 天為負 Gamma（紅點）；沒有 Flip 的日子依總 GEX 正負判斷。`;
 }
 
 /* ---------- export ---------- */
@@ -391,7 +396,7 @@ function applySnapshot(snap){
   const rows=snap.rows.map(([code,exp,K,cp,px,oi])=>{const [y,mo,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
   const keep=state.tradeDate===snap.tradeDate?state.included:{};
-  state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null};
+  state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,dw:snap.dealerWeights||null,inst:snap.institutional||null};
   render();return true;
 }
 async function load(){
