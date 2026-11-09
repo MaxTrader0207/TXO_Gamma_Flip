@@ -33,6 +33,27 @@ def atm_iv(cs, F, val):
     return round(sum(v) / len(v), 4) if v else None
 
 
+def levels(cs, rows, F):
+    """Call Wall／Put Wall（與頁面相同：現價以上 Call Gamma 曝險最大、以下 Put Gamma 曝險最大）、
+    磁吸（±3% 內未平倉最大的履約價）、最大痛點（全部到期合併）"""
+    cg, pg = {}, {}
+    for _, _, K, call, T, iv, oi in cs:
+        G = tg.gamma(F, K, T, iv) * oi
+        (cg if call else pg)[K] = (cg if call else pg).get(K, 0) + G
+    cw = max((k for k in cg if k >= F), key=lambda k: cg[k], default=None)
+    pw = max((k for k in pg if k <= F), key=lambda k: pg[k], default=None)
+    oi = {}
+    for r in rows:
+        oi[r[2]] = oi.get(r[2], 0) + r[5]
+    near = [k for k in oi if abs(k - F) / F <= 0.03]
+    pin = max(near, key=lambda k: oi[k]) if near else None
+    ks = sorted(oi)
+    def pain(x):
+        return sum(r[5] * (max(0, x - r[2]) if r[3] == "C" else max(0, r[2] - x)) for r in rows)
+    mp = min(ks, key=pain) if ks else None
+    return {"callWall": cw, "putWall": pw, "pin": pin, "maxPain": mp}
+
+
 def flip_fast(cs, F, mode, w, pct=0.08, n=160):
     return tg.flip(cs, F, mode, pct=pct, n=n, w=w)
 
@@ -79,6 +100,8 @@ def compute(days_back):
         sub = [x for x in cs if x[0] == near]
         rec["near_code"] = near
         rec["near_gex"] = round(tg.gex(sub, F, "naive"), 3) if sub else None
+        rec.update(levels(cs, rows, F))
+        rec["near_exp"] = exps.get(near)
         rows_out.append(rec)
         print(d, F, rec["naive_gex"], rec["naive_flip"], rec.get("dealer_gex"), flush=True)
     return rows_out
@@ -248,7 +271,8 @@ def main():
               open(os.path.join(OUT, "stats.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     keys = ["date", "F", "open", "high", "low", "close", "iv", "oiC", "oiP", "naive_gex", "naive_flip", "naive_dist",
             "dealer_gex", "dealer_flip", "dealer_dist", "wc", "wp", "near_code", "near_gex",
-            "naive_gex_pct", "dealer_gex_pct", "near_gex_pct", "ret", "tr1", "ret1", "rv5", "rv_iv"]
+            "naive_gex_pct", "dealer_gex_pct", "near_gex_pct", "ret", "tr1", "ret1", "rv5", "rv_iv",
+            "callWall", "putWall", "pin", "maxPain", "near_exp"]
     with open(os.path.join(OUT, "daily.csv"), "w", encoding="utf-8-sig", newline="") as f:
         wr = csv.writer(f)
         wr.writerow(keys)
