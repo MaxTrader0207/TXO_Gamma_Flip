@@ -45,9 +45,16 @@ def update(days, opt, fut, items, tg, model, tiers):
             if e.get("status") == "open" and e["exp"] <= ds and any(r[0] == e["code"] and r[1] == ds for r in allr):
                 S = final_settle(allr, e["code"], F)
                 if S is None:
+                    print("模擬帳本：", ds, e["code"], "到期但無法反推結算價", flush=True)
                     continue
                 pay = max(0.0, S - e["Kc"]) + max(0.0, e["Kp"] - S)
                 e.update(status="closed", S=S, pnl=round(e["credit"] - 2 * COST - pay, 1))
+            elif e.get("status") == "open" and e["exp"] < ds and not any(r[0] == e["code"] for r in allr):
+                # 契約已經消失（到期日當天的資料缺漏或休市）：以到期後第一個交易日的台指期收盤近似結算價，並標註
+                print("模擬帳本：", e["code"], "到期日", e["exp"], "無資料，改用", ds, "台指期近似", flush=True)
+                S = fut[d][5] if len(fut[d]) > 5 and fut[d][5] > 0 else F
+                pay = max(0.0, S - e["Kc"]) + max(0.0, e["Kp"] - S)
+                e.update(status="closed", S=S, approx=True, pnl=round(e["credit"] - 2 * COST - pay, 1))
         # 2) 今天的新部位
         it = items.get(ds) or {}
         if any((ds, t["name"]) in have for t in tiers) or not it.get("atr5"):

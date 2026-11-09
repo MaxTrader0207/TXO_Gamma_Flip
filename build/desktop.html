@@ -463,13 +463,13 @@ function paperHtml(pp){
   const n0=v=>v==null?"—":Math.round(v).toLocaleString("zh-TW"),f1=v=>v==null?"—":(+v).toFixed(1),sg=v=>v==null?"—":(v>=0?"+":"")+(+v).toFixed(1);
   const sum=pp.tiers.map(t=>`<tr><td>${t.name}（k=${t.k}）</td><td>${t.days}</td><td>${t.traded}</td><td>${t.skipRed}／${t.skipRange}</td><td>${t.closed}／${t.open}</td><td class="${t.total>=0?"pnl-pos":"pnl-neg"}">${sg(t.total)}</td><td>${t.win==null?"—":Math.round(t.win*100)+"%"}</td><td>${f1(t.worst)}</td></tr>`).join("");
   const rec=(pp.recent||[]).slice().reverse().map(e=>{
-    const st=e.status==="skip"?`<span class="muted">${e.reason}</span>`:e.status==="open"?"持有中":`結算 ${n0(e.S)}`;
+    const st=e.status==="skip"?`<span class="muted">${e.reason}</span>`:e.status==="open"?"持有中":`結算 ${e.approx?"≈":""}${n0(e.S)}`;
     const legs=e.Kc?`${n0(e.Kc)}C ${f1(e.pc)}／${n0(e.Kp)}P ${f1(e.pp)}`:"—";
     const pnl=e.status==="closed"?`<span class="${e.pnl>=0?"pnl-pos":"pnl-neg"}">${sg(e.pnl)}</span>`:"";
     return `<tr><td>${e.date.slice(5).replace("-","/")}</td><td><span class="ldot ${e.light}"></span>${e.tier}</td><td>${e.code}</td><td>${legs}</td><td>${st}</td><td>${pnl}</td></tr>`;}).join("");
   return `<div class="tablewrap"><table class="mini paper"><thead><tr><th>級別</th><th>天數</th><th>進場</th><th>不進場（紅燈／超範圍）</th><th>已結算／持有中</th><th>累計（點）</th><th>勝率</th><th>最大單筆</th></tr></thead><tbody>${sum}</tbody></table></div>
 <div class="tablewrap"><table class="mini paper"><thead><tr><th>日期</th><th>燈號｜級別</th><th>契約</th><th>賣出履約價（結算價）</th><th>狀態</th><th>損益</th></tr></thead><tbody>${rec}</tbody></table></div>
-<p class="paper-note">自 ${pp.start||"—"} 起每天收盤自動記錄，以當日結算價成交、每腳扣 ${pp.cost} 點成本，不是實際下單。損益單位為點（1 點＝50 元）。</p>`;
+<p class="paper-note">自 ${pp.start||"—"} 起每天收盤自動記錄，以當日結算價成交、每腳扣 ${pp.cost} 點成本，不是實際下單。損益單位為點（1 點＝50 元）；「≈」表示到期日資料缺漏，以下一個交易日的台指期收盤近似結算價。</p>`;
 }
 
 /* 燈號實績：用每日歷史（Call 多、Put 空的合併 Flip）回看每個燈號隔日的實際波動 */
