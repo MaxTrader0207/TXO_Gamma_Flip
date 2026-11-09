@@ -126,10 +126,19 @@ def parse_institutional(txt):
         d = ymd(r[c["d"]])
         if not d:
             continue
-        side = "C" if "買" in r[c["cp"]] else "P"
+        v = r[c["cp"]].upper()
+        if "賣" in v or "PUT" in v:
+            side = "P"
+        elif "買" in v or "CALL" in v:
+            side = "C"
+        else:
+            DEBUG.append("三大法人買賣權別無法辨識：" + r[c["cp"]])
+            continue
         who = r[c["who"]]
         lo, so = num(r[c["lo"]]), num(r[c["so"]])
         out.setdefault(d, {}).setdefault(who, {})[side] = {"long": lo, "short": so, "net": lo - so}
+    if out:
+        print("三大法人買賣權別樣本：", sorted({r[c["cp"]].strip() for r in rows[hi + 1:] if len(r) > c["cp"]})[:6])
     return out
 
 
