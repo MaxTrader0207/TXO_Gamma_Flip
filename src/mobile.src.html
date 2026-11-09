@@ -131,6 +131,16 @@ body.nodl .dl{display:none}
 .bt-why{color:var(--muted);font-size:13px}
 .bt-sell{border-top:1px dashed var(--line);padding-top:6px;display:grid;gap:4px}.bt-tiers{margin:0;padding-left:18px;display:grid;gap:4px}.bt-sell.no b:last-of-type{color:var(--neg)}
 .bt-src{color:var(--muted);font-size:12px}
+.paper td,.paper th{white-space:nowrap}
+.pnl-pos{color:var(--pos);font-weight:700}.pnl-neg{color:var(--neg);font-weight:700}
+.ldot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--muted);vertical-align:middle}
+.ldot.red{background:var(--neg)}.ldot.green{background:var(--pos)}
+.paper-note{color:var(--muted);font-size:12px;margin:6px 0 0}
+table.mini{border-collapse:collapse;width:100%;font-size:12px}
+table.mini th,table.mini td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
+table.mini th{color:var(--muted);font-weight:500}
+.tablewrap{overflow-x:auto;margin-bottom:8px}
+.muted{color:var(--muted)}
 </style>
 
 <header class="bar">
@@ -183,6 +193,11 @@ body.nodl .dl{display:none}
     <h2>每日 Flip 走勢 <small>近 40 個交易日</small></h2>
     <div class="chartbox"><canvas id="histChart" aria-label="每日 Flip 走勢"></canvas></div>
     <div id="histNote" class="note"></div>
+  </section>
+
+  <section id="paperCard" class="card" hidden>
+    <h2>模擬帳本 <small>賣方規則的實際追蹤</small></h2>
+    <div id="paperBody"></div>
   </section>
 
   <section id="expCard" class="card" hidden>
@@ -265,6 +280,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
+  {const h=paperHtml(state.paper);$("paperCard").hidden=!h;$("paperBody").innerHTML=h;}
   {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr,state.rows,state.val);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
   {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
@@ -410,7 +426,7 @@ function applySnapshot(snap){
   const rows=snap.rows.map(([code,exp,K,cp,px,oi])=>{const [y,mo,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi};});
   const keep=state.tradeDate===snap.tradeDate?state.included:{};
-  state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,dw:snap.dealerWeights||null,inst:snap.institutional||null,bt:snap.btSignal||null};
+  state={rows,spot:+snap.F,val:new Date(snap.valuation||snap.tradeDate+"T13:45:00+08:00"),source:"auto",tradeDate:snap.tradeDate,included:keep,atr:+snap.atr5||null,dw:snap.dealerWeights||null,inst:snap.institutional||null,bt:snap.btSignal||null,paper:snap.paper||null};
   render();return true;
 }
 async function load(){

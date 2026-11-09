@@ -48,4 +48,5 @@ jobs:
           git add data offline
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
           git commit -m "data: TXO $(TZ=Asia/Taipei date +%F)"
-          git push
+          for i in 1 2 3; do git pull --rebase -q -X theirs && git push && exit 0; sleep 5; done
+          exit 1
