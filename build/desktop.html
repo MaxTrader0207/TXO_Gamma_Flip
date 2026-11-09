@@ -137,8 +137,8 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
       <label for="valDate">評價時點<input id="valDate" type="datetime-local"></label>
       <label for="signMode">造市商方向假設
         <select id="signMode">
-          <option value="dealer" selected>自營商實際淨部位（期交所三大法人）</option>
-          <option value="naive">Call 多、Put 空（SqueezeMetrics）</option>
+                    <option value="naive" selected>Call 多、Put 空（SqueezeMetrics，回測最佳）</option>
+          <option value="dealer">自營商實際淨部位（期交所三大法人）</option>
           <option value="short">全部空方（散戶淨買）</option>
         </select>
       </label>
@@ -235,7 +235,7 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
         <li>欄位會自動比對：契約、到期月份(週別)、契約到期日（若無則依代碼推算：<code>YYYYMM</code>＝第三個週三、<code>Wn</code>＝第 n 個週三、<code>Fn</code>＝第 n 個週五）、履約價、買賣權、結算價、未沖銷契約數。</li>
         <li>以台指期近月價為遠期價，用 Black-76 從結算價反推每個履約價的 IV；反推失敗時用同到期鄰近履約價的 IV，再不行用 IV 備援值。</li>
         <li>GEX = 方向 × Γ × OI × 50 × S² × 1%，單位億元。每 100 點避險量 = Γ × OI × 100 × 50 ÷ 200（大台口數）。</li>
-        <li>方向假設預設採「自營商實際淨部位」：期交所每日公布三大法人選擇權買賣權分計，以自營商 Call、Put 的淨未平倉除以全市場未平倉，當作每口的方向權重（例如 +15% 代表自營商整體淨買進 15% 的 Call）。各履約價按比例分配，是近似值；另外兩種假設保留供對照。</li>
+        <li>方向假設預設採「Call 多、Put 空」。2024/11～2026/11 共 483 個交易日的回測：期貨收在此假設的 Flip 之下時，隔日真實波幅平均 2.43%、漲跌 ≥1.5% 的機率 37%；在 Flip 之上時為 1.78%、24%。扣除「近 5 日 ATR」本身的波動延續效果後，Flip 之下仍多出約 0.7 個百分點（t≈3.4），是統計上站得住的訊號。「自營商實際淨部位」以期交所三大法人的自營商 Call、Put 淨未平倉比例當方向權重，但它約 8 成的日子算不出 Flip，扣除 ATR 效果後也沒有額外預測力，所以保留作參考對照。完整回測在 repo 的 backtest/ 資料夾。</li>
         <li>Flip：固定 OI 與各履約價 IV，在 ±掃描範圍內 400 個價位重新計算 Γ，取總 GEX 穿越 0 且最接近現價的位置（線性內插）。</li>
         <li>結算日當天剩餘時間極短，價平 Gamma 會劇烈放大，Flip 可能在履約價之間跳動，請與其他到期一起判讀。</li>
       </ol>
