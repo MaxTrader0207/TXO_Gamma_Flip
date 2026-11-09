@@ -157,6 +157,8 @@ table.mini th{color:var(--muted);font-weight:500}
 .bt-night.red .bt-head b{color:var(--neg)}.bt-night.green .bt-head b{color:var(--pos)}
 .bt-night.changed{border-width:2px;border-color:var(--warn)}
 .nchg{background:var(--warn);color:#fff;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
+.health{border:2px solid var(--neg);background:color-mix(in srgb,var(--neg) 10%,var(--bg));color:var(--ink);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:13px;line-height:1.6}
+.health b{color:var(--neg)}
 </style>
 
 <header class="bar">
@@ -167,6 +169,7 @@ table.mini th{color:var(--muted);font-weight:500}
 </header>
 
 <main>
+  <div id="healthBar" class="health" role="alert" hidden></div>
   <div id="emptyState" class="card empty">每日資料讀取中。資料在交易日 18:21 後自動更新。</div>
 
   <section id="heroCard" class="card hero" hidden>
@@ -297,6 +300,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
+  {const el=$("healthBar"),h=healthHtml(state.tradeDate,NIGHT,undefined,HEALTH);el.hidden=!h;el.innerHTML=h;}
   {const h=paperHtml(state.paper,12),b=boardHtml(state.bt?.stats?._board,state.paper);$("paperCard").hidden=!(h||b);$("paperBody").innerHTML=h;$("boardBody").innerHTML=b;}
   {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr,state.rows,state.val);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
@@ -441,7 +445,7 @@ function schedule(){$("status").textContent="重新計算中…";requestAnimatio
 /* ---------- data ---------- */
 function applySnapshot(snap){
   if(!snap||!Array.isArray(snap.rows)||!snap.rows.length)return false;
-  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;
+  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;HEALTH=snap.health||null;
   const rows=snap.rows.map(([code,exp,K,cp,px,oi,bid,ask])=>{const [y,mo,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,mo-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi,
       ...(hasQ?{bid:bid==null?null:+bid,ask:ask==null?null:+ask}:{})};});

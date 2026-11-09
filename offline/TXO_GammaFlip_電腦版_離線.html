@@ -167,9 +167,12 @@ code{font-family:var(--f-mono);font-size:12px;background:var(--chip);padding:1px
 .bt-night.red .bt-head b{color:var(--neg)}.bt-night.green .bt-head b{color:var(--pos)}
 .bt-night.changed{border-width:2px;border-color:var(--warn)}
 .nchg{background:var(--warn);color:#fff;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
+.health{border:2px solid var(--neg);background:color-mix(in srgb,var(--neg) 10%,var(--bg));color:var(--ink);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:13px;line-height:1.6}
+.health b{color:var(--neg)}
 </style>
 
 <div class="wrap">
+  <div id="healthBar" class="health" role="alert" hidden></div>
   <div class="top">
     <div>
       <h1>TXO Gamma Flip 戰情板</h1>
@@ -468,6 +471,33 @@ ${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btBuyHtml(bt
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
 }
 
+/* 資料健康檢查：依台北時間、休市日推算「應該已經有的」最新交易日，資料落後就在頁首警示 */
+function expectedTradeDate(nowMs){
+  const t=new Date((nowMs||Date.now())+8*36e5);  // 以 UTC getter 讀台北時間
+  let d=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()));
+  const mins=t.getUTCHours()*60+t.getUTCMinutes();
+  const isTD=x=>{const w=x.getUTCDay();return w!==0&&w!==6&&!HOLI.has(x.toISOString().slice(0,10));};
+  if(!(isTD(d)&&mins>=17*60+30))d=new Date(d.getTime()-864e5);  // 期交所約 16:15 公布，17:30 前不算延遲
+  for(let k=0;k<10&&!isTD(d);k++)d=new Date(d.getTime()-864e5);
+  return {date:d.toISOString().slice(0,10),mins,today:new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate())).toISOString().slice(0,10),isTD};
+}
+function healthHtml(tradeDate,night,nowMs,hc){
+  if(!tradeDate)return "";
+  const ex=expectedTradeDate(nowMs),out=[];
+  if(tradeDate<ex.date)out.push(`<b>資料尚未更新</b>：目前顯示 ${tradeDate}，最新交易日應為 ${ex.date}。可能是期交所延遲公布或自動更新失敗（GitHub Actions 失敗時會在 repo 開 Issue 通知），判讀時請留意。`);
+  else{const td=new Date(ex.today+"T00:00:00Z");
+    if(ex.isTD(td)&&ex.mins>=8*60+20&&ex.mins<15*60&&tradeDate<ex.today&&!(night&&night.after===tradeDate))
+      out.push(`<b>夜盤燈號尚未更新</b>：今天 08:20 後仍沒有 ${tradeDate} 之後的夜盤資料，燈號仍是前一日盤的判斷。`);}
+  if(hc){const bad=[];
+    if(hc.rows<200)bad.push(`選擇權資料只有 ${hc.rows} 筆`);
+    if(hc.quotes!=null&&hc.quotes<0.3)bad.push("買賣報價缺漏，賣方／買方建議改用結算價");
+    if(hc.inst===false)bad.push("三大法人資料缺漏（自營商模式退回預設假設）");
+    if(hc.spot===false)bad.push("加權指數缺漏（均線改用台指期）");
+    if(hc.atr===false)bad.push("ATR 缺漏");
+    if(bad.length)out.push(`<b>資料不完整</b>：${bad.join("；")}。`);}
+  return out.join("<br>");
+}
+
 /* 夜盤更新：每天早上用夜盤收盤重新判斷燈號（日盤的選擇權結構不變），並附上夜盤回測 */
 function btNightHtml(bt,night,F){
   const N=bt.stats&&bt.stats._night;if(!N)return "";
@@ -489,7 +519,7 @@ function btNightHtml(bt,night,F){
 
 /* 賣方履約價（回測規則）：最近到期、履約價距離 = k × 預估波幅 × √持有交易日數，只在綠燈日做 */
 /* 台灣休市日（由資料管線從證交所抓取），剩餘交易日會扣掉 */
-let HOLI=new Set(),NIGHT=null;
+let HOLI=new Set(),NIGHT=null,HEALTH=null;
 const isoD=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 function tradingDaysTo(val,exp){let n=0;const d=new Date(val.getFullYear(),val.getMonth(),val.getDate());
   while(d<exp){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6&&d<=exp&&!HOLI.has(isoD(d)))n++;}return Math.max(1,n);}
@@ -625,6 +655,7 @@ const flipMarker={id:"flipMarker",afterDatasetsDraw(ch,args,opts){
 function render(){
   if(!state.rows.length)return;
   const dtxt=dealerText();$("kDealer").textContent=dtxt||"—";
+  {const el=$("healthBar"),h=state.source==="auto"?healthHtml(state.tradeDate,NIGHT,undefined,HEALTH):"";el.hidden=!h;el.innerHTML=h;}
   {const h=state.source==="auto"?paperHtml(state.paper):"",b=state.source==="auto"?boardHtml(state.bt?.stats?._board,state.paper):"";
    $("paperPanel").hidden=!(h||b);$("paperBody").innerHTML=h;$("boardBody").innerHTML=b;}
   {const el=$("btLight"),h=state.source==="auto"?btHtml(state.bt,state.spot,state.atr,state.rows,state.val):"";el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
@@ -1019,7 +1050,7 @@ function applySnapshot(snap,origin){
   if(!snap||!Array.isArray(snap.rows)||!snap.rows.length)return false;
   latestSnap=snap;
   if(mode==="manual")return true;
-  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;
+  const hasQ=(snap.fields||[]).includes("bid");HOLI=new Set(snap.holidays||[]);NIGHT=snap.night||null;HEALTH=snap.health||null;
   const rows=snap.rows.map(([code,exp,K,cp,px,oi,bid,ask])=>{const [y,m,d]=exp.split("-").map(Number);
     return {code,grp:groupOf(code),exp:new Date(y,m-1,d),K:+K,isCall:cp==="C",px:px==null?NaN:+px,oi:+oi,
       ...(hasQ?{bid:bid==null?null:+bid,ask:ask==null?null:+ask}:{})};});

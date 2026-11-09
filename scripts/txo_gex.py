@@ -532,6 +532,11 @@ def main():
         it = items.get(latest["tradeDate"], {})
         latest["atr5"] = it.get("atr5")
         latest["ohlc"] = [it.get(k) for k in ("open", "high", "low", "close")]
+        rr = latest.get("rows") or []
+        latest["health"] = {"rows": len(rr),
+                            "quotes": round(sum(1 for r in rr if len(r) > 7 and (r[6] or r[7])) / len(rr), 3) if rr else 0,
+                            "inst": bool(latest.get("dealerWeights")), "spot": bool(seq and seq[-1].get("spot")),
+                            "atr": bool(latest.get("atr5"))}
         latest["holidays"] = sorted(x.isoformat() for x in holi if x >= today - timedelta(days=7))
         latest["btSignal"] = attach_signal(latest, seq)
         try:

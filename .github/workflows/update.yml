@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: txo-data
@@ -50,3 +51,18 @@ jobs:
           git commit -m "data: TXO $(TZ=Asia/Taipei date +%F)"
           for i in 1 2 3; do git pull --rebase -q -X theirs && git push && exit 0; sleep 5; done
           exit 1
+      - name: 失敗時開 Issue 通知（成功時自動關閉）
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ job.status }}
+        run: |
+          R=${{ github.repository }}
+          T="自動執行失敗：${{ github.workflow }}"
+          N=$(gh issue list -R "$R" --state open --search "\"$T\" in:title" --json number --jq '.[0].number' || true)
+          B="執行紀錄：${{ github.server_url }}/$R/actions/runs/${{ github.run_id }}（台北 $(TZ=Asia/Taipei date '+%F %T')）"
+          if [ "$STATUS" = "success" ]; then
+            if [ -n "$N" ]; then gh issue close "$N" -R "$R" -c "已恢復正常。$B"; fi
+          else
+            if [ -n "$N" ]; then gh issue comment "$N" -R "$R" -b "再次失敗。$B"; else gh issue create -R "$R" -t "$T" -b "$B"; fi
+          fi
