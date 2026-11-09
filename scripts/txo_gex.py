@@ -210,7 +210,8 @@ def parse_options(txt, keep_zero_oi=False):
     return out
 
 
-def parse_futures(txt):
+def parse_futures(txt, session="一般"):
+    """session：一般（日盤）或 盤後（夜盤）"""
     head, rows = read_csv(txt)
     if not head:
         return {}
@@ -221,7 +222,9 @@ def parse_futures(txt):
     for r in rows:
         if c["prod"] >= 0 and r[c["prod"]].upper() != "TX":
             continue
-        if c["sess"] >= 0 and r[c["sess"]] and "一般" not in r[c["sess"]]:
+        if c["sess"] >= 0 and r[c["sess"]] and session not in r[c["sess"]]:
+            continue
+        if c["sess"] < 0 and session != "一般":
             continue
         code = re.sub(r"\s", "", r[c["mon"]])
         if not re.match(r"^\d{6}$", code):  # 只取月契約，排除價差

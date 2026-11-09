@@ -1,0 +1,46 @@
+name: TXO 夜盤更新
+# 台北時間週二至週六 07:20、07:50：抓台指期夜盤收盤，重新判斷燈號，寫入 data/latest.json 的 night 欄位
+# 手動執行時可選 backtest：跑夜盤燈號回測（backtest/night.md）
+
+on:
+  schedule:
+    - cron: "20 23 * * 1-5"
+    - cron: "50 23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "update（盤前更新）或 backtest（夜盤回測）"
+        default: "update"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: txo-data
+  cancel-in-progress: false
+
+jobs:
+  night:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: 執行
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "backtest" ]; then
+            python scripts/night_bt.py
+          else
+            python scripts/night.py
+          fi
+      - name: 提交結果
+        run: |
+          git config user.name "txo-bot"
+          git config user.email "txo-bot@users.noreply.github.com"
+          git add data/latest.json backtest
+          git commit -m "night: $(TZ=Asia/Taipei date +%F)" || exit 0
+          for i in 1 2 3; do git pull --rebase -q -X theirs && git push && exit 0; sleep 5; done
+          exit 1
