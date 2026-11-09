@@ -458,11 +458,11 @@ function btSellHtml(bt,F,atr,rows,val){
 }
 
 /* 模擬帳本：管線每天依回測規則記錄的賣方部位（到期後以最後結算價算損益） */
-function paperHtml(pp){
+function paperHtml(pp,lim){
   if(!pp||!pp.tiers||!pp.tiers.length)return "";
   const n0=v=>v==null?"—":Math.round(v).toLocaleString("zh-TW"),f1=v=>v==null?"—":(+v).toFixed(1),sg=v=>v==null?"—":(v>=0?"+":"")+(+v).toFixed(1);
   const sum=pp.tiers.map(t=>`<tr><td>${t.name}（k=${t.k}）</td><td>${t.days}</td><td>${t.traded}</td><td>${t.skipRed}／${t.skipRange}</td><td>${t.closed}／${t.open}</td><td class="${t.total>=0?"pnl-pos":"pnl-neg"}">${sg(t.total)}</td><td>${t.win==null?"—":Math.round(t.win*100)+"%"}</td><td>${f1(t.worst)}</td></tr>`).join("");
-  const rec=(pp.recent||[]).slice().reverse().map(e=>{
+  const rec=(pp.recent||[]).slice().reverse().slice(0,lim||40).map(e=>{
     const st=e.status==="skip"?`<span class="muted">${e.reason}</span>`:e.status==="open"?"持有中":`結算 ${e.approx?"≈":""}${n0(e.S)}`;
     const legs=e.Kc?`${n0(e.Kc)}C ${f1(e.pc)}／${n0(e.Kp)}P ${f1(e.pp)}`:"—";
     const pnl=e.status==="closed"?`<span class="${e.pnl>=0?"pnl-pos":"pnl-neg"}">${sg(e.pnl)}</span>`:"";

@@ -280,7 +280,7 @@ function compute(){
 let curveChart,histChart,last=null;
 const P=v=>v==null||!isFinite(v)?"—":fmt(v,0);
 function render(){
-  {const h=paperHtml(state.paper);$("paperCard").hidden=!h;$("paperBody").innerHTML=h;}
+  {const h=paperHtml(state.paper,12);$("paperCard").hidden=!h;$("paperBody").innerHTML=h;}
   {const el=$("btLight"),h=btHtml(state.bt,state.spot,state.atr,state.rows,state.val);el.hidden=!h;el.className="btlight "+(state.bt?.bucket||"");el.innerHTML=h;}
   if(!state.rows.length)return;
   {const d=state.inst&&state.inst["自營商"],w=state.dw,f=v=>(v>0?"+":"")+fmt(v,0),pc=v=>(v>0?"+":"")+fmt(v*100,1)+"%";
