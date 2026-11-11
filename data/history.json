@@ -1,25 +1,6 @@
 {
 "items": [
 {
-"date": "2025-10-29",
-"F": 28414.0,
-"naive_gex": 29.549,
-"naive_flip": 28113.0,
-"open": 28225.0,
-"high": 28446.0,
-"low": 28203.0,
-"close": 28412.0,
-"src": "backtest",
-"dealer_gex": 13.625,
-"dealer_flip": null,
-"dealer_wc": 0.0963,
-"dealer_wp": 0.15,
-"tr": 243.0,
-"spot": 28294.74,
-"iv30": 0.2206,
-"skew": 0.0955
-},
-{
 "date": "2025-10-30",
 "F": 28399.0,
 "naive_gex": 83.796,
@@ -5947,7 +5928,46 @@
 "spot": 42711.92,
 "tr": 1685.0,
 "atr5": 2339.8
+},
+{
+"date": "2026-11-11",
+"F": 44136.0,
+"naive_gex": 19.354,
+"naive_flip": 43052.9,
+"naive_flipW": 43462.9,
+"naive_gexW": 0.014,
+"naive_flipF": 42636.4,
+"naive_gexF": 13.376,
+"naive_flipM": 43460.9,
+"naive_gexM": 5.964,
+"short_gex": -92.152,
+"short_flip": null,
+"short_flipW": null,
+"short_gexW": -0.105,
+"short_flipF": null,
+"short_gexF": -37.867,
+"short_flipM": null,
+"short_gexM": -54.18,
+"dealer_gex": 3.45,
+"dealer_flip": 40632.8,
+"dealer_flipW": 42240.8,
+"dealer_gexW": 0.003,
+"dealer_flipF": null,
+"dealer_gexF": 1.841,
+"dealer_flipM": 41512.8,
+"dealer_gexM": 1.606,
+"dealer_wc": 0.0991,
+"dealer_wp": -0.057,
+"open": 42942.0,
+"high": 44250.0,
+"low": 42646.0,
+"close": 44091.0,
+"iv30": 0.3243,
+"skew": 0.1114,
+"spot": 44257.15,
+"tr": 1627.0,
+"atr5": 2320.4
 }
 ],
-"updatedAt": "2026-11-11T01:37:37+08:00"
+"updatedAt": "2026-11-12T00:30:17+08:00"
 }
