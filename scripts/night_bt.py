@@ -41,6 +41,10 @@ def night_map(day, night):
         for d, v in night.items():
             if d in prev:
                 out[prev[d]] = v
+        # 盤前：最新一筆夜盤的日期（＝今天）還沒有日盤資料，接在最後一個日盤之後
+        late = sorted(d for d in night if ds and d > ds[-1] and night[d][2] > 0)
+        if late:
+            out[ds[-1]] = night[late[0]]
     else:
         out = dict(night)
     return out, attributed_next

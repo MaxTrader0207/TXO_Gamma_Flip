@@ -28,6 +28,7 @@ def main():
     if d0 not in day or not night:
         print("沒有日盤或夜盤資料", d0 in day, len(night))
         return
+    print("日盤最新", max(day), "夜盤最新", max(night))
     nm, nextattr = night_bt.night_map(day, night)
     n = nm.get(d0)
     if not n or not (n[5] > 0):
