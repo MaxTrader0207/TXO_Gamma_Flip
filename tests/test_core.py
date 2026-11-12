@@ -156,3 +156,20 @@ def test_snapshot_json_shape():
     assert "summary" in lat and "naive" in lat["summary"]
     datetime.fromisoformat(lat["valuation"])
     assert date.fromisoformat(lat["tradeDate"]) <= date.today() + timedelta(days=1)
+
+
+def test_night_map_premarket():
+    # 期交所把夜盤記在隔天日期下；盤前那筆夜盤（日期＝今天）還沒有日盤可對應，要接在最後一個日盤之後
+    import night_bt
+    d = [date(2026, 11, 9), date(2026, 11, 10), date(2026, 11, 11), date(2026, 11, 12)]
+    day = {d[0]: ("202611", 100, 99, 101, 98, 100), d[1]: ("202611", 110, 100, 111, 99, 110),
+           d[2]: ("202611", 120, 110, 121, 109, 120)}
+    night = {d[1]: ("202611", 101, 100.5, 102, 100, 101), d[2]: ("202611", 111, 110.5, 112, 110, 111),
+             d[3]: ("202611", 123, 120.5, 124, 120, 123)}
+    nm, nxt = night_bt.night_map(day, night)
+    assert nxt, "夜盤開盤接近前一個日盤收盤 → 判定為次一營業日歸屬"
+    assert nm[d[0]][5] == 101 and nm[d[1]][5] == 111
+    assert nm[d[2]][5] == 123, "盤前：11/12 的夜盤要對到 11/11 日盤"
+    # 當天日盤出來之後，對應結果不變
+    day[d[3]] = ("202611", 130, 123, 131, 122, 130)
+    assert night_bt.night_map(day, night)[0][d[2]][5] == 123
