@@ -365,7 +365,7 @@ function btHtml(bt,F,atr,rows,val){
   const tip=red?"實際波動常高於隱含波動：避免裸賣選擇權，賣方改用有保護的價差並縮小口數；停損要放寬或改用選擇權限定風險。"
     :hot?"雖在 Flip 之上，但近期波動還沒退，預估波幅明顯高於平均：賣方先降口數、履約價放遠，等 ATR 回落再加碼。"
     :"實際波動通常低於隱含波動，賣方相對有利；價差寬度與停損照 ATR 設定即可。";
-  return `${btNightHtml(bt,NIGHT,F)}<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b><span class="bt-why">${why}</span></div>
+  return `${btNightHtml(bt,NIGHT,F)}<div class="bt-head"><span class="bt-dot" aria-hidden="true"></span><b>${red?"紅燈｜Flip 之下（負 Gamma）":"綠燈｜Flip 之上（正 Gamma）"}</b>${bt.prevBucket&&bt.prevBucket!==bt.bucket?`<span class="nchg">日盤${red?"由綠轉紅":"由紅轉綠"}</span>`:""}<span class="bt-why">${why}</span></div>
 <p class="bt-stat">回測同組 ${s.n} 天：隔日真實波幅 <b>${f2(s.tr1)}%</b>（全部平均 ${f2(meta.tr1||0)}%）、漲跌 ≥1.5% 機率 <b>${p1(s.big)}</b>（全部 ${p1(meta.big||0)}）、未來 5 日實際÷隱含波動 <b>${f2(s.rv_iv)}</b></p>
 ${est}<p class="bt-tip">${tip}</p>${btSellHtml(bt,F,atr,rows,val)}${btVolHtml(bt)}${btBuyHtml(bt,F,rows,val)}${btMaHtml(bt,F,rows,val)}
 <p class="bt-src">回測期間 ${meta.from||""}～${meta.to||""}。燈號固定以收盤資料、Call 多 Put 空、全部到期計算，不受上方勾選與方向切換影響${m?`；紅燈的額外波幅在扣除近期波動後仍顯著（t≈${f2(m.t_red)}）`:""}。</p>`;
@@ -418,7 +418,7 @@ function todayPlan(bt,F,atr,rows,val,night){
   const buyCall=bt.bucket==="red"&&bt.ret!=null&&bt.ret<0&&atmC?{K,px:qp(atmC,"buy")}:null;
   const maC=bt.ma&&bt.ma.breaks&&bt.ma.breaks.length?both.filter(x=>x.isCall&&x.K>=F*1.01).sort((a,b)=>a.K-b.K)[0]:null;
   const skewHi=bt.vol&&bt.vol.skewPct!=null&&bt.vol.skewPct>=0.8;
-  return {code,exp,n,light,useN,E,S0,sells,buyCall,ma:maC?{K:maC.K,px:qp(maC,"buy"),lines:bt.ma.breaks}:null,skewHi,dayLight:bt.bucket};
+  return {code,exp,n,light,useN,E,S0,sells,buyCall,ma:maC?{K:maC.K,px:qp(maC,"buy"),lines:bt.ma.breaks}:null,skewHi,dayLight:bt.bucket,prevLight:bt.prevBucket||null};
 }
 /* 部位大小：依資金、可承受回撤、保證金上限計算口數（設定存在本機瀏覽器） */
 const SIZE_KEY="txo_size_v1";
@@ -442,7 +442,7 @@ function summaryHtml(plan,cfg,margin){
   const n0=v=>Math.round(v).toLocaleString("zh-TW"),f1=v=>(+v).toFixed(1),red=plan.light==="red",L=lotsFor(plan,cfg,margin);
   const lt=k=>cfg&&L[k]!=null?`，建議 <b>${L[k].lots} 口</b>`:"";
   const lines=[];
-  lines.push(`<li class="${red?"neg":"pos"}"><b>${red?"紅燈":"綠燈"}</b>${plan.useN?`（夜盤後${plan.dayLight!==plan.light?`，<b>由${plan.dayLight==="red"?"紅轉綠":"綠轉紅"}</b>`:"維持"}）`:"（日盤收盤）"}｜預估${plan.useN?"今天":"下一個交易日"}真實波幅 ${plan.E?`<b>±${n0(plan.E/2)}</b>（全幅約 ${n0(plan.E)} 點）`:"—"}｜最近到期 ${plan.code}，剩 ${plan.n} 個交易日</li>`);
+  lines.push(`<li class="${red?"neg":"pos"}"><b>${red?"紅燈":"綠燈"}</b>${plan.useN?`（夜盤後${plan.dayLight!==plan.light?`，<b>由${plan.dayLight==="red"?"紅轉綠":"綠轉紅"}</b>`:"維持"}）`:`（日盤收盤${plan.prevLight&&plan.prevLight!==plan.light?`，<b>由${plan.prevLight==="red"?"紅轉綠":"綠轉紅"}</b>`:""}）`}｜預估${plan.useN?"今天":"下一個交易日"}真實波幅 ${plan.E?`<b>±${n0(plan.E/2)}</b>（全幅約 ${n0(plan.E)} 點）`:"—"}｜最近到期 ${plan.code}，剩 ${plan.n} 個交易日</li>`);
   for(const s of plan.sells)lines.push(`<li>賣方${s.name}（k=${s.k}）：${s.ok?`賣 <b>${n0(s.c.K)} Call</b>＋<b>${n0(s.p.K)} Put</b>（買價合計 ${f1(s.credit)} 點）${lt(s.name)}`:`<span class="muted">不進場（${s.why}）</span>`}</li>`);
   if(plan.skewHi)lines.push(`<li class="neg">Put 偏斜在近 60 日高檔 → 賣方口數減半（已反映在建議口數）</li>`);
   lines.push(`<li>買方：${plan.buyCall?`紅燈＋下跌 → 買 <b>${n0(plan.buyCall.K)} Call</b>（賣價 ${f1(plan.buyCall.px)}）${lt("buyCall")}，多頭市場較有效`:`<span class="muted">條件不成立</span>`}</li>`);

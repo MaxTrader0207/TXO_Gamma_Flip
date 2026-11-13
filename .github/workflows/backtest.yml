@@ -1,12 +1,15 @@
 name: TXO Gamma Flip 長期回測
-# 手動執行：往回抓 N 天的期交所資料逐日計算 GEX／Flip，結果寫到 backtest/（不影響儀表板資料）
+# 每月自動重跑，也可手動執行：往回抓 N 天的期交所資料逐日計算 GEX／Flip，結果寫到 backtest/（不影響儀表板資料）
 
 on:
+  schedule:
+    # 每月第一個週六台北 09:30 自動重跑（GitHub 排程可能延遲數小時，月度工作不受影響）
+    - cron: "30 1 1-7 * 6"
   workflow_dispatch:
     inputs:
       days:
-        description: "往回抓幾個日曆天（730 ≈ 2 年）"
-        default: "730"
+        description: "往回抓幾個日曆天（留空＝從 2021-10-01 到今天）"
+        default: ""
 
 permissions:
   contents: write
@@ -28,7 +31,11 @@ jobs:
       - run: pip install requests
       - name: 回測
         run: |
-          python scripts/backtest.py --days "${{ github.event.inputs.days || '730' }}"
+          # 排程執行（沒有輸入）時，從 2021-10-01 算到今天，避免把既有的長期資料截短
+          DAYS="${{ github.event.inputs.days }}"
+          if [ -z "$DAYS" ]; then DAYS=$(( ( $(date +%s) - $(date -d 2021-10-01 +%s) ) / 86400 )); fi
+          echo "回測天數 $DAYS"
+          python scripts/backtest.py --days "$DAYS"
           python scripts/strategy_bt.py
           python scripts/buyer_bt.py
           python scripts/ma_bt.py
