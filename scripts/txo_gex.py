@@ -461,7 +461,9 @@ def attach_signal(latest, seq):
         expand = past[-1]["atr5"] > past[-6]["atr5"]
     if len(past) >= 2 and past[-1].get("close") and past[-2].get("close"):
         ret = round((past[-1]["close"] / past[-2]["close"] - 1) * 100, 2)
-    return {"bucket": b, "label": BT_LABELS[b], "flip": s["flip"], "gex": s["gex"],
+    # 前一個交易日的燈號（用來判斷燈號是否轉向）
+    prev = bt_bucket(past[-2]["F"], past[-2].get("naive_flip"), past[-2].get("naive_gex")) if len(past) >= 2 else None
+    return {"bucket": b, "prevBucket": prev, "label": BT_LABELS[b], "flip": s["flip"], "gex": s["gex"],
             "pct": round(pct, 3) if pct is not None else None, "expand": expand, "ret": ret,
             "vol": vol_status(past),
             "ma": ma_status(ma_prices(past)), "maSrc": "加權指數" if spot_ok(past) else "台指期近月", "stats": table}
@@ -486,6 +488,11 @@ def main():
     if not inst:
         print("三大法人除錯：", [x for x in DEBUG if "callsAndPuts" in x or "身份別" in x][-3:])
     days = sorted(d for d in opt if d in fut)
+    # 期交所約 16:15 後才公布完整盤後資料（未平倉、結算價）；在那之前抓到的當日資料是半成品，不採用
+    now = datetime.now(TPE)
+    if days and days[-1] == today and (now.hour, now.minute) < (16, 15) and not os.environ.get("TXO_ALLOW_PARTIAL"):
+        print("當日盤後資料尚未完整公布（16:15 前），略過", today)
+        days = days[:-1]
     if not days:
         print("沒有可用的交易日資料（假日或期交所尚未公布）")
         os.makedirs(DATA, exist_ok=True)
