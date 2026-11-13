@@ -1,57 +1,57 @@
 {
- "rows": 1228,
- "from": "2021-10-18",
- "to": "2026-11-09",
+ "rows": 1241,
+ "from": "2021-10-01",
+ "to": "2026-11-12",
  "stats": [
   {
    "group": "全部",
    "bucket": "全部",
-   "n": 1227,
-   "tr1": 1.591,
-   "absret1": 1.002,
-   "rv_iv": 0.959,
-   "lag1": 0.007,
-   "big_move": 0.2
+   "n": 1240,
+   "tr1": 1.597,
+   "absret1": 1.005,
+   "rv_iv": 0.96,
+   "lag1": 0.018,
+   "big_move": 0.202
   },
   {
    "group": "naive 與 Flip 距離",
    "bucket": "a. 低於 Flip 0.5σ 以上",
-   "n": 42,
-   "tr1": 2.359,
-   "absret1": 1.492,
-   "rv_iv": 1.132,
-   "lag1": 0.356,
-   "big_move": 0.381
+   "n": 44,
+   "tr1": 2.339,
+   "absret1": 1.484,
+   "rv_iv": 1.118,
+   "lag1": 0.321,
+   "big_move": 0.386
   },
   {
    "group": "naive 與 Flip 距離",
    "bucket": "b. 低於 Flip 0.5σ 內",
-   "n": 273,
-   "tr1": 1.779,
-   "absret1": 1.151,
-   "rv_iv": 1.014,
-   "lag1": -0.035,
-   "big_move": 0.249
+   "n": 279,
+   "tr1": 1.781,
+   "absret1": 1.147,
+   "rv_iv": 1.01,
+   "lag1": -0.026,
+   "big_move": 0.247
   },
   {
    "group": "naive 與 Flip 距離",
    "bucket": "c. 高於 Flip 0.5σ 內",
-   "n": 529,
-   "tr1": 1.482,
-   "absret1": 0.943,
-   "rv_iv": 0.936,
-   "lag1": 0.035,
+   "n": 531,
+   "tr1": 1.48,
+   "absret1": 0.941,
+   "rv_iv": 0.937,
+   "lag1": 0.031,
    "big_move": 0.183
   },
   {
    "group": "naive 與 Flip 距離",
    "bucket": "d. 高於 Flip 0.5σ 以上",
-   "n": 379,
-   "tr1": 1.462,
-   "absret1": 0.867,
-   "rv_iv": 0.928,
-   "lag1": 0.164,
-   "big_move": 0.158
+   "n": 382,
+   "tr1": 1.48,
+   "absret1": 0.882,
+   "rv_iv": 0.933,
+   "lag1": 0.202,
+   "big_move": 0.165
   },
   {
    "group": "naive 與 Flip 距離",
@@ -66,12 +66,12 @@
   {
    "group": "dealer 與 Flip 距離",
    "bucket": "a. 低於 Flip 0.5σ 以上",
-   "n": 63,
-   "tr1": 2.092,
-   "absret1": 1.305,
-   "rv_iv": 1.165,
-   "lag1": 1.115,
-   "big_move": 0.27
+   "n": 61,
+   "tr1": 2.142,
+   "absret1": 1.344,
+   "rv_iv": 1.177,
+   "lag1": 1.154,
+   "big_move": 0.279
   },
   {
    "group": "dealer 與 Flip 距離",
@@ -96,201 +96,201 @@
   {
    "group": "dealer 與 Flip 距離",
    "bucket": "d. 高於 Flip 0.5σ 以上",
-   "n": 114,
-   "tr1": 1.603,
-   "absret1": 1.106,
+   "n": 116,
+   "tr1": 1.637,
+   "absret1": 1.135,
    "rv_iv": 1.076,
-   "lag1": 0.149,
-   "big_move": 0.254
+   "lag1": 0.171,
+   "big_move": 0.267
   },
   {
    "group": "dealer 與 Flip 距離",
    "bucket": "無 Flip",
-   "n": 1002,
-   "tr1": 1.553,
+   "n": 1015,
+   "tr1": 1.555,
    "absret1": 0.966,
-   "rv_iv": 0.936,
-   "lag1": -0.108,
+   "rv_iv": 0.937,
+   "lag1": -0.095,
    "big_move": 0.188
   },
   {
    "group": "naive GEX 60日百分位",
    "bucket": "Q1",
-   "n": 222,
-   "tr1": 1.9,
-   "absret1": 1.199,
-   "rv_iv": 1.018,
-   "lag1": -0.306,
-   "big_move": 0.266
+   "n": 225,
+   "tr1": 1.894,
+   "absret1": 1.191,
+   "rv_iv": 1.013,
+   "lag1": -0.299,
+   "big_move": 0.262
   },
   {
    "group": "naive GEX 60日百分位",
    "bucket": "Q2",
-   "n": 230,
-   "tr1": 1.719,
-   "absret1": 1.118,
-   "rv_iv": 1.042,
-   "lag1": -0.159,
-   "big_move": 0.235
+   "n": 232,
+   "tr1": 1.737,
+   "absret1": 1.13,
+   "rv_iv": 1.045,
+   "lag1": -0.137,
+   "big_move": 0.241
   },
   {
    "group": "naive GEX 60日百分位",
    "bucket": "Q3",
-   "n": 226,
-   "tr1": 1.689,
-   "absret1": 1.06,
-   "rv_iv": 0.948,
-   "lag1": 0.22,
-   "big_move": 0.235
+   "n": 225,
+   "tr1": 1.694,
+   "absret1": 1.063,
+   "rv_iv": 0.955,
+   "lag1": 0.222,
+   "big_move": 0.236
   },
   {
    "group": "naive GEX 60日百分位",
    "bucket": "Q4",
-   "n": 233,
-   "tr1": 1.479,
-   "absret1": 0.916,
-   "rv_iv": 0.93,
-   "lag1": 0.115,
-   "big_move": 0.159
+   "n": 238,
+   "tr1": 1.481,
+   "absret1": 0.917,
+   "rv_iv": 0.923,
+   "lag1": 0.157,
+   "big_move": 0.16
   },
   {
    "group": "naive GEX 60日百分位",
    "bucket": "Q5",
-   "n": 277,
-   "tr1": 1.334,
-   "absret1": 0.846,
-   "rv_iv": 0.926,
-   "lag1": 0.12,
-   "big_move": 0.148
+   "n": 281,
+   "tr1": 1.327,
+   "absret1": 0.84,
+   "rv_iv": 0.921,
+   "lag1": 0.119,
+   "big_move": 0.146
   },
   {
    "group": "dealer GEX 60日百分位",
    "bucket": "Q1",
-   "n": 126,
-   "tr1": 2.438,
-   "absret1": 1.663,
-   "rv_iv": 1.132,
-   "lag1": 0.014,
-   "big_move": 0.373
+   "n": 123,
+   "tr1": 2.492,
+   "absret1": 1.701,
+   "rv_iv": 1.145,
+   "lag1": -0.051,
+   "big_move": 0.39
   },
   {
    "group": "dealer GEX 60日百分位",
    "bucket": "Q2",
-   "n": 111,
-   "tr1": 1.889,
-   "absret1": 1.19,
-   "rv_iv": 0.999,
-   "lag1": -0.592,
-   "big_move": 0.315
+   "n": 109,
+   "tr1": 1.94,
+   "absret1": 1.22,
+   "rv_iv": 0.975,
+   "lag1": -0.392,
+   "big_move": 0.33
   },
   {
    "group": "dealer GEX 60日百分位",
    "bucket": "Q3",
-   "n": 137,
-   "tr1": 1.828,
-   "absret1": 1.042,
-   "rv_iv": 0.984,
-   "lag1": 0.53,
-   "big_move": 0.19
+   "n": 132,
+   "tr1": 1.885,
+   "absret1": 1.078,
+   "rv_iv": 1.012,
+   "lag1": 0.541,
+   "big_move": 0.205
   },
   {
    "group": "dealer GEX 60日百分位",
    "bucket": "Q4",
-   "n": 140,
-   "tr1": 1.625,
-   "absret1": 1.03,
-   "rv_iv": 0.915,
-   "lag1": 0.12,
+   "n": 143,
+   "tr1": 1.594,
+   "absret1": 1.006,
+   "rv_iv": 0.894,
+   "lag1": 0.117,
+   "big_move": 0.217
+  },
+  {
+   "group": "dealer GEX 60日百分位",
+   "bucket": "Q5",
+   "n": 171,
+   "tr1": 1.554,
+   "absret1": 1.008,
+   "rv_iv": 0.995,
+   "lag1": -0.086,
+   "big_move": 0.175
+  },
+  {
+   "group": "最近到期 GEX 60日百分位",
+   "bucket": "Q1",
+   "n": 223,
+   "tr1": 1.769,
+   "absret1": 1.139,
+   "rv_iv": 0.972,
+   "lag1": -0.294,
    "big_move": 0.229
   },
   {
-   "group": "dealer GEX 60日百分位",
-   "bucket": "Q5",
-   "n": 170,
-   "tr1": 1.557,
-   "absret1": 1.009,
-   "rv_iv": 0.989,
-   "lag1": -0.088,
-   "big_move": 0.176
-  },
-  {
-   "group": "最近到期 GEX 60日百分位",
-   "bucket": "Q1",
-   "n": 220,
-   "tr1": 1.773,
-   "absret1": 1.146,
-   "rv_iv": 0.976,
-   "lag1": -0.3,
-   "big_move": 0.232
-  },
-  {
    "group": "最近到期 GEX 60日百分位",
    "bucket": "Q2",
-   "n": 227,
-   "tr1": 1.699,
-   "absret1": 1.07,
+   "n": 228,
+   "tr1": 1.707,
+   "absret1": 1.074,
    "rv_iv": 0.97,
-   "lag1": -0.155,
-   "big_move": 0.242
+   "lag1": -0.186,
+   "big_move": 0.246
   },
   {
    "group": "最近到期 GEX 60日百分位",
    "bucket": "Q3",
    "n": 236,
-   "tr1": 1.699,
-   "absret1": 1.077,
-   "rv_iv": 1.008,
-   "lag1": 0.075,
-   "big_move": 0.22
+   "tr1": 1.714,
+   "absret1": 1.089,
+   "rv_iv": 1.01,
+   "lag1": 0.126,
+   "big_move": 0.225
   },
   {
    "group": "最近到期 GEX 60日百分位",
    "bucket": "Q4",
-   "n": 243,
-   "tr1": 1.564,
-   "absret1": 0.952,
-   "rv_iv": 0.955,
-   "lag1": 0.265,
-   "big_move": 0.169
+   "n": 247,
+   "tr1": 1.554,
+   "absret1": 0.939,
+   "rv_iv": 0.954,
+   "lag1": 0.263,
+   "big_move": 0.166
   },
   {
    "group": "最近到期 GEX 60日百分位",
    "bucket": "Q5",
-   "n": 262,
-   "tr1": 1.36,
-   "absret1": 0.879,
-   "rv_iv": 0.947,
-   "lag1": 0.093,
+   "n": 267,
+   "tr1": 1.362,
+   "absret1": 0.883,
+   "rv_iv": 0.942,
+   "lag1": 0.131,
    "big_move": 0.172
   },
   {
    "group": "naive GEX 正負",
    "bucket": "正",
-   "n": 909,
-   "tr1": 1.479,
-   "absret1": 0.915,
-   "rv_iv": 0.933,
-   "lag1": 0.066,
-   "big_move": 0.174
+   "n": 914,
+   "tr1": 1.485,
+   "absret1": 0.92,
+   "rv_iv": 0.935,
+   "lag1": 0.079,
+   "big_move": 0.176
   },
   {
    "group": "naive GEX 正負",
    "bucket": "負",
-   "n": 318,
-   "tr1": 1.912,
-   "absret1": 1.249,
-   "rv_iv": 1.033,
-   "lag1": -0.161,
-   "big_move": 0.274
+   "n": 326,
+   "tr1": 1.911,
+   "absret1": 1.244,
+   "rv_iv": 1.028,
+   "lag1": -0.153,
+   "big_move": 0.273
   },
   {
    "group": "2021 naive GEX 百分位",
    "bucket": "Q1",
-   "n": 3,
-   "tr1": 1.069,
-   "absret1": 0.733,
-   "rv_iv": 0.827,
-   "lag1": -0.411,
+   "n": 6,
+   "tr1": 1.257,
+   "absret1": 0.667,
+   "rv_iv": 0.752,
+   "lag1": -0.12,
    "big_move": 0.0
   },
   {
@@ -306,31 +306,31 @@
   {
    "group": "2021 naive GEX 百分位",
    "bucket": "Q3",
-   "n": 4,
-   "tr1": 0.797,
-   "absret1": 0.494,
-   "rv_iv": 0.812,
-   "lag1": -0.024,
+   "n": 3,
+   "tr1": 0.883,
+   "absret1": 0.542,
+   "rv_iv": 0.785,
+   "lag1": 0.012,
    "big_move": 0.0
   },
   {
    "group": "2021 naive GEX 百分位",
    "bucket": "Q4",
-   "n": 5,
-   "tr1": 0.765,
-   "absret1": 0.372,
-   "rv_iv": 0.753,
-   "lag1": 0.096,
+   "n": 9,
+   "tr1": 0.861,
+   "absret1": 0.344,
+   "rv_iv": 0.632,
+   "lag1": 0.135,
    "big_move": 0.0
   },
   {
    "group": "2021 naive GEX 百分位",
    "bucket": "Q5",
-   "n": 2,
-   "tr1": 0.668,
-   "absret1": 0.574,
-   "rv_iv": 0.858,
-   "lag1": 0.381,
+   "n": 6,
+   "tr1": 0.804,
+   "absret1": 0.461,
+   "rv_iv": 0.653,
+   "lag1": 0.164,
    "big_move": 0.0
   },
   {
@@ -546,12 +546,12 @@
   {
    "group": "2026 naive GEX 百分位",
    "bucket": "Q2",
-   "n": 30,
-   "tr1": 2.724,
-   "absret1": 1.643,
-   "rv_iv": 1.099,
-   "lag1": -0.735,
-   "big_move": 0.367
+   "n": 32,
+   "tr1": 2.787,
+   "absret1": 1.695,
+   "rv_iv": 1.118,
+   "lag1": -0.539,
+   "big_move": 0.406
   },
   {
    "group": "2026 naive GEX 百分位",
@@ -559,19 +559,19 @@
    "n": 38,
    "tr1": 2.536,
    "absret1": 1.413,
-   "rv_iv": 0.883,
+   "rv_iv": 0.929,
    "lag1": 0.75,
    "big_move": 0.368
   },
   {
    "group": "2026 naive GEX 百分位",
    "bucket": "Q4",
-   "n": 42,
-   "tr1": 2.268,
-   "absret1": 1.459,
+   "n": 43,
+   "tr1": 2.305,
+   "absret1": 1.505,
    "rv_iv": 0.97,
-   "lag1": 0.387,
-   "big_move": 0.333
+   "lag1": 0.61,
+   "big_move": 0.349
   },
   {
    "group": "2026 naive GEX 百分位",
@@ -586,22 +586,22 @@
   {
    "group": "回測燈號",
    "bucket": "green",
-   "n": 909,
-   "tr1": 1.479,
-   "absret1": 0.915,
-   "rv_iv": 0.933,
-   "lag1": 0.066,
-   "big_move": 0.174
+   "n": 914,
+   "tr1": 1.485,
+   "absret1": 0.92,
+   "rv_iv": 0.935,
+   "lag1": 0.079,
+   "big_move": 0.176
   },
   {
    "group": "回測燈號",
    "bucket": "red",
-   "n": 318,
-   "tr1": 1.912,
-   "absret1": 1.249,
-   "rv_iv": 1.033,
-   "lag1": -0.161,
-   "big_move": 0.274
+   "n": 326,
+   "tr1": 1.911,
+   "absret1": 1.244,
+   "rv_iv": 1.028,
+   "lag1": -0.153,
+   "big_move": 0.273
   }
  ]
 }
